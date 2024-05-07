@@ -21,7 +21,10 @@ public:
         GetChatList=5,
         GetMessageList=6,
         DeleteUserFromChat=7,
-        DeleteUserAccount=8
+        DeleteUserAccount=8,
+        GetUserList=9,
+        InviteToChat=10,
+        GetUserInChatList=11
     };
 };
 

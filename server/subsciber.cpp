@@ -27,7 +27,7 @@ subscribe()
         {
             // Consume messages in a loop.
             // std::cout << "Before while loop";
-            std::tuple<parser::MsgType,uint32_t,uint32_t, std::string,int64_t> msg_tuple;
+            std::tuple<parser::MsgType,uint32_t,uint32_t, std::string,int64_t,std::optional<std::vector<int>>> msg_tuple;
             while (true) {
                 if (state_->spsc_queue_subscriber_.pop(msg_tuple))
                 {
@@ -156,6 +156,28 @@ subscribe()
                         sqlite3_bind_int(stmt, 1, userId);
                         if (sqlite3_step(stmt) != SQLITE_DONE) {
                             std::cout << "error in deleting user";
+                        }
+                        sqlite3_finalize(stmt);
+                        break;
+                    }
+                    case parser::MsgType::InviteToChat: {
+                        //INSERT INTO UserInChat(chatid, userid, parentUser) VALUES(? , ? , ? )
+                        //std::cout << "Inviting usertocha to db :" << msg << std::endl;
+                        std::string sql = "INSERT INTO UserInChat(chatid, userid, parentUser) VALUES(?,?,?)";
+                        sqlite3_stmt* stmt = NULL;
+                        
+                        std::vector<int> invited = std::get<5>(msg_tuple).value();
+                        
+                        for (int user : invited) {
+                            int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL);
+                            sqlite3_bind_int(stmt, 1, chatId);
+                            sqlite3_bind_int(stmt, 2, user);
+                            sqlite3_bind_int(stmt, 3, userId);
+                            if (sqlite3_step(stmt) != SQLITE_DONE) {
+                                std::cout << "error in inviting usertochat\n";
+                            }
+                            sqlite3_reset(stmt);
+                            sqlite3_clear_bindings(stmt);
                         }
                         sqlite3_finalize(stmt);
                         break;

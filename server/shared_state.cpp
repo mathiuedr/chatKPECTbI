@@ -85,13 +85,73 @@ websocket_unsubscribe_to_symbols(websocket_session* session)
 
 void shared_state::deleteUserFromChat(websocket_session* session, int chatId)
 {
-    spsc_queue_subscriber_.push(std::make_tuple(parser::MsgType::DeleteUserFromChat, chatId, session->getId(), "",0));
+    spsc_queue_subscriber_.push(std::make_tuple(parser::MsgType::DeleteUserFromChat, chatId, session->getId(), "",0,std::nullopt));
 }
 
 void shared_state::deleteUserAccount(websocket_session* session)
 {
-    spsc_queue_subscriber_.push(std::make_tuple(parser::MsgType::DeleteUserAccount, 0, session->getId(), "",0));
+    spsc_queue_subscriber_.push(std::make_tuple(parser::MsgType::DeleteUserAccount, 0, session->getId(), "",0,std::nullopt));
     
+}
+
+void shared_state::getUserList(websocket_session* session)
+{
+    std::string sql = "SELECT Users.id,Users.name FROM Users";
+    sqlite3_stmt* stmt = NULL;
+    boost::json::object obj;
+    boost::json::array arr;
+    obj["topic"] = "UserList";
+    int rc = sqlite3_prepare_v2(session->db, sql.c_str(), -1, &stmt, NULL);
+    while (sqlite3_step(stmt) != SQLITE_DONE) {
+        boost::json::object ob;
+        ob["userId"] = sqlite3_column_int(stmt, 0);
+        ob["name"] = std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+        arr.emplace_back(ob);
+    }
+    obj["users"] = arr;
+    sqlite3_finalize(stmt);
+    boost::shared_ptr<std::string> ss = boost::make_shared<std::string>(boost::json::serialize(obj));
+    session->send(ss);
+}
+
+void shared_state::newUser(std::string name, int id)
+{
+    boost::json::object obj;
+    obj["topic"] = "NewUser";
+    obj["userId"] = id;
+    obj["name"] = name;
+    boost::shared_ptr<std::string> ss = boost::make_shared<std::string>(boost::json::serialize(obj));
+    for (auto a : sessions_) {
+        a->send(ss);
+    }
+}
+
+void shared_state::inviteToChat(int chatId, std::vector<int> userId,int parentUser)
+{
+    spsc_queue_subscriber_.push(std::make_tuple(parser::MsgType::InviteToChat, chatId, parentUser, "", 0, 
+        std::make_optional<std::vector<int>>(userId)));
+}
+
+void shared_state::getUserInChatList(websocket_session* session)
+{
+    std::string sql = "SELECT Users.id, Users.name FROM Users, UserInChat WHERE Users.id=UserInChat.userid AND UserInChat.chatid=?";
+    sqlite3_stmt* stmt = NULL;
+    boost::json::object obj;
+    boost::json::array arr;
+    obj["topic"] = "UsersInChatList";
+    int rc = sqlite3_prepare_v2(session->db, sql.c_str(), -1, &stmt, NULL);
+    if (session->topics.empty()) { return; }
+    sqlite3_bind_int(stmt, 1, stoi(*session->topics.begin()));
+    while (sqlite3_step(stmt) != SQLITE_DONE) {
+        boost::json::object ob;
+        ob["id"] = sqlite3_column_int(stmt, 0);
+        ob["user_name"] = std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+        arr.emplace_back(ob);
+    }
+    obj["users"] = arr;
+    sqlite3_finalize(stmt);
+    boost::shared_ptr<std::string> ss = boost::make_shared<std::string>(boost::json::serialize(obj));
+    session->send(ss);
 }
 
 void shared_state::getChatList(websocket_session* session) {
@@ -109,8 +169,9 @@ void shared_state::getChatList(websocket_session* session) {
         arr.emplace_back(ob);
     }
     obj["chats"] = arr;
+    sqlite3_finalize(stmt);
     boost::shared_ptr<std::string> ss = boost::make_shared<std::string>(boost::json::serialize(obj));
-    sess___[std::to_string(session->getId())]->send(ss);
+    session->send(ss);
 }
 
 void shared_state::createChat(websocket_session* session, std::string chatName, std::vector<std::string> invited) {
@@ -153,8 +214,8 @@ void shared_state::createChat(websocket_session* session, std::string chatName, 
     }
     else {
         std::cout << "error\n";
-        return;
     }
+    sqlite3_finalize(stmt);
 }
 
 void shared_state::getMessageList(websocket_session* session) {
@@ -164,8 +225,8 @@ void shared_state::getMessageList(websocket_session* session) {
     boost::json::array arr;
     obj["topic"] = "MessageHistory";
     int rc = sqlite3_prepare_v2(session->db, sql.c_str(), -1, &stmt, NULL);
-    if (sess___[std::to_string(session->getId())]->topics.empty()) { return; }
-    sqlite3_bind_int(stmt, 1, stoi(*sess___[std::to_string(session->getId())]->topics.begin()));
+    if (session->topics.empty()) { return; }
+    sqlite3_bind_int(stmt, 1, stoi(*session->topics.begin()));
     while (sqlite3_step(stmt) != SQLITE_DONE) {
         boost::json::object ob;
         ob["user_name"] = std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
@@ -176,11 +237,9 @@ void shared_state::getMessageList(websocket_session* session) {
         arr.emplace_back(ob);
     }
     obj["messages"] = arr;
+    sqlite3_finalize(stmt);
     boost::shared_ptr<std::string> ss = boost::make_shared<std::string>(boost::json::serialize(obj));
-    auto ses = sess___[std::to_string(session->getId())];
-    if (!ses->topics.empty()) {
-        ses->send(ss);
-    }
+    session->send(ss);
 }
 
 void shared_state::sendMsg(websocket_session* session, std::string message) {
@@ -191,7 +250,7 @@ void shared_state::sendMsg(websocket_session* session, std::string message) {
     const auto p1 = std::chrono::system_clock::now();
     int64_t date = std::chrono::duration_cast<std::chrono::milliseconds>(
         p1.time_since_epoch()).count();
-    spsc_queue_subscriber_.push(std::make_tuple(parser::MsgType::MESSAGE, stoi(chatId), session->getId(), *ss,date));
+    spsc_queue_subscriber_.push(std::make_tuple(parser::MsgType::MESSAGE, stoi(chatId), session->getId(), *ss,date,std::nullopt));
     // Make a local list of all the weak pointers representing
     // the sessions, so we can do the actual sending without
     // holding the mutex:
@@ -305,6 +364,26 @@ parse(std::string msg, websocket_session* session)
     {
         deleteUserAccount(session);
         break;
+    }
+    case parser::MsgType::GetUserList:
+    {
+        getUserList(session);
+        break;
+    }
+    case parser::MsgType::InviteToChat: {
+        //int chatId = boost::json::value_to<int>(obj.at("chatId"));
+        std::vector<int> invited;
+        std::string invited1 = boost::json::value_to<std::string>(obj.at("Invited"));
+        boost::json::array  arr = boost::json::parse(invited1).as_array();
+        for (int i = 0; i < arr.size(); i++) {
+            invited.push_back(boost::json::value_to<int>(arr[i]));
+        }
+        inviteToChat(std::stoi(*session->topics.begin()), invited, session->getId());
+        break;
+    }
+    case parser::MsgType::GetUserInChatList:
+    {
+        getUserInChatList(session);
     }
     default:
         std::cout << "(Unsupported message type)" << std::endl;

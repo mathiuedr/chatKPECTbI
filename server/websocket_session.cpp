@@ -54,10 +54,11 @@ on_accept(beast::error_code ec)
     // Handle the error, if any
     if (ec)
         return fail(ec, "accept");
-
+    
     // Add this session to the list of active session
     state_->join(this);
-
+    state_->getUserList(this);
+    state_->getChatList(this);
     // Read a message
     // Do not echo back the message
     // Parse the message and set the subscription

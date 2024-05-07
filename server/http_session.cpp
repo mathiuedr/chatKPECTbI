@@ -199,7 +199,7 @@ validate_auth(http::request<Body, http::basic_fields<Allocator>>& req,sqlite3* d
     }
 }
 template <class Body, class Allocator>
-boost::optional<int>
+boost::optional<std::pair<int,std::string>>
 register_user(http::request<Body, http::basic_fields<Allocator>>& req,sqlite3* db)
 {
     // Returns a bad request response
@@ -236,15 +236,20 @@ register_user(http::request<Body, http::basic_fields<Allocator>>& req,sqlite3* d
         sqlite3_bind_text(stmt, 1, login.value().c_str(), std::strlen(login.value().c_str()), NULL);
         sqlite3_bind_text(stmt, 2, password.value().c_str(), std::strlen(password.value().c_str()), NULL);
         sqlite3_bind_text(stmt, 3, name.value().c_str(), std::strlen(name.value().c_str()), NULL);
-        if (sqlite3_step(stmt) == SQLITE_DONE) {
+        if (sqlite3_step(stmt)== SQLITE_DONE) {
             sqlite3_reset(stmt);
+            sqlite3_clear_bindings(stmt);
             sql = "SELECT id FROM Users WHERE login=? AND pass=? AND name=?";
             int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL);
-            if (sqlite3_step(stmt) != SQLITE_DONE) {
-                int ans = sqlite3_column_int(stmt, 0);
+            sqlite3_bind_text(stmt, 1, login.value().c_str(), std::strlen(login.value().c_str()), NULL);
+            sqlite3_bind_text(stmt, 2, password.value().c_str(), std::strlen(password.value().c_str()), NULL);
+            sqlite3_bind_text(stmt, 3, name.value().c_str(), std::strlen(name.value().c_str()), NULL);
+            auto a = sqlite3_step(stmt);
+            if (a != SQLITE_DONE) {
+                std::pair<int, std::string> ans = { sqlite3_column_int(stmt, 0), 
+                name.value()};
                 sqlite3_finalize(stmt);
-                boost::optional<int> r = boost::make_optional<int&>(ans);
-                return r;
+                return boost::make_optional<std::pair<int, std::string>&>(ans);
             }
             else {
                 sqlite3_finalize(stmt);
@@ -490,8 +495,8 @@ on_read(beast::error_code ec, std::size_t)
             }
         }
         if (login_reg.has_value() && password.has_value()&&name.has_value()) {
-             id = register_user(parser_->get(),db);
-            if (!id.has_value()) {
+             boost::optional<std::pair<int,std::string>> ans = register_user(parser_->get(),db);
+            if (!ans.has_value()) {
                 std::cout << "Sending unauthorized response\n";
                 keep_alive = parser_->get().keep_alive();
                 auto rs = boost::make_optional<http::message_generator>(unauthorized("That user already exists"));
@@ -502,6 +507,10 @@ on_read(beast::error_code ec, std::size_t)
                         self->on_write(ec, bytes, keep_alive);
                     });
                 return;
+            }
+            else {
+                id.emplace(std::get<0>(ans.value()));
+                state_->newUser(std::get<1>(ans.value()), std::get<0>(ans.value()));
             }
         }
         else if (login.has_value() && password.has_value()) {
