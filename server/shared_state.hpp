@@ -59,7 +59,7 @@ public:
     void deleteUserAccount(websocket_session* session);
     void getUserList(websocket_session* session);
     void newUser(std::string name,int id);
-    void inviteToChat(int chatId, std::vector<int> userId,int parentUser);
+    void inviteToChat(websocket_session* session,int chatId, std::vector<int> userId,int parentUser);
     void getUserInChatList(websocket_session* session);
     void leave(websocket_session* session);
     void sendMsg(websocket_session* session,std::string message);
