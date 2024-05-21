@@ -19,6 +19,8 @@ void net_close(net_sesn_t* sesn);
 net_sesn_t* net_connect(const net_connect_t* cfg);
 
 json_t* net_recv_json(net_sesn_t* sesn);
+
+// this consumes the `obj` arg
 bool net_send_json(net_sesn_t* sesn, json_t* obj);
 
 #endif

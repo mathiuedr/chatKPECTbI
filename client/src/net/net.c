@@ -100,10 +100,10 @@ json_t* net_recv_json(net_sesn_t* sesn) {
 		return !cJSON_IsInvalid(obj) ? obj : NULL;
 	} else return NULL; }
 
+// this consumes the `obj` arg
 bool net_send_json(net_sesn_t* sesn, json_t* obj) {
 	size_t _sent;
-	char* str = cJSON_Print(obj);
-
+	char* str = cJSON_Print(obj); cJSON_Delete(obj);
 	CURLcode err = curl_ws_send(
 		sesn, str, strlen(str), &_sent, 0, CURLWS_TEXT);
 

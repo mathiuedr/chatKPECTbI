@@ -1,11 +1,6 @@
 #include <stdlib.h>
 #include "proto.h"
 
-#define PROTO_FREE_LIST(list, cur) \
-	for ( \
-		typeof(list) cur = list, cur##__0 = NULL; cur != NULL; \
-		free(cur##__0), cur##__0 = cur, cur = cur->next)
-
 #define PROTO_PUSH(root, cur, val) { \
 	if (root != NULL) { cur->next = val; cur = val; } \
 	else root = cur = val; }
@@ -71,6 +66,7 @@ proto_ent_t* proto_ent_parse(bool user, json_t* json) {
 void proto_ent_free(proto_ent_t* ents) {
 	PROTO_FREE_LIST(ents, ent) free(ent->name); }
 
+// this consumes the `json` arg
 proto_res_t* proto_res_parse(json_t* json) {
 	proto_res_t* res = calloc(1, sizeof(proto_res_t));
 	res->kind = cJSON_GetNumberValue(

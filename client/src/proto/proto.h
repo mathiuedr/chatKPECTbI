@@ -4,15 +4,44 @@
 #include "../net/net.h"
 #include <stdint.h>
 
-#define PROTO_FOREACH(list, var) \
-	for ( \
-		typeof(list) var = list; \
-		var != NULL; var = var->next)
+#define PROTO_FOREACH(list, var) for ( \
+	typeof(list) var = list; var != NULL; var = var->next)
+
+#define PROTO_FREE_LIST(list, cur) for ( \
+	typeof(list) cur = list, cur##__0 = NULL; \
+	cur != NULL; \
+	free(cur##__0), cur##__0 = cur, cur = cur->next)
 
 typedef size_t proto_id;
 typedef size_t proto_time;
 
 // req.c
+
+typedef struct proto_ids {
+	struct proto_ids* next; proto_id id;
+} proto_ids;
+
+proto_ids* proto_ids_new(proto_id id);
+void proto_ids_free(proto_ids* ids);
+
+json_t* proto_get_users();
+json_t* proto_get_chats();
+
+json_t* proto_chat_connect(proto_id chat);
+json_t* proto_chat_disconnect();
+
+// this consumes the `users` arg
+json_t* proto_chat_new(const char* name, proto_ids* users);
+
+// this consumes the `users` arg
+json_t* proto_chat_invite(proto_id chat, proto_ids* users);
+json_t* proto_chat_leave(proto_id chat);
+
+json_t* proto_chat_get_users();
+json_t* proto_chat_get_msgs();
+json_t* proto_chat_send(const char* msg);
+
+json_t* proto_delete_account();
 
 // res.c
 
@@ -25,8 +54,8 @@ void proto_ent_free(proto_ent_t* ents);
 
 typedef struct proto_msg_t {
 	struct proto_msg_t* next;
-	char* msg; char* uname;
-	proto_time time; } proto_msg_t;
+	char* msg; char* uname; proto_time time;
+} proto_msg_t;
 
 void proto_msg_free(proto_msg_t* msgs);
 
@@ -49,6 +78,7 @@ typedef struct {
 		proto_msg_t* msg; } val;
 } proto_res_t;
 
+// this consumes the `json` arg
 proto_res_t* proto_res_parse(json_t* json);
 void proto_res_free(proto_res_t* res);
 
