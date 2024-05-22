@@ -1,19 +1,11 @@
-#include "net/net.h"
-#include <stdio.h>
+#include "gui/gui.h"
+#include <stdbool.h>
+
+void login_cb(char* a, char* b, char* c, void* d) {}
 
 int main() {
-	net_init();
-	net_connect_t cfg = {
-		NET_INIT_LOGIN,
-		"ws://127.0.0.1:1234",
-		"username", "password", NULL };
-	
-	net_sesn_t* sesn = net_connect(&cfg);
-	while (true) {
-		printf("net_recv_json...\n");
-		json_t* obj = net_recv_json(sesn);
+	gui_init();
+	gui_window* wnd = gui_login(login_cb, NULL);
 
-		printf("%s\n", cJSON_Print(obj));
-		cJSON_Delete(obj); }
-
-	net_cleanup(); return 0; }
+	gui_window_init(wnd, NULL, NULL, true); gui_run();
+	gui_cleanup(); return 0; }
