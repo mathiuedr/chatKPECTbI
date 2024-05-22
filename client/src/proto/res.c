@@ -8,7 +8,7 @@
 #define PROTO_PARSE_ARRAY(json, objs, fn, ...) { \
 	json_t* json##__0; \
 	typeof(objs) objs##__0 = NULL; \
-	cJSON_ArrayForEach(json, json##__0) { \
+	cJSON_ArrayForEach(json##__0, json) { \
 		typeof(objs) obj = fn( \
 			__VA_ARGS__ __VA_OPT__(,) json##__0); \
 		PROTO_PUSH(objs, objs##__0, obj); } }
@@ -27,7 +27,7 @@ proto_msg_t* proto_msg_parse0(json_t* json) {
 	msg->msg = proto_string_extract(json, "text");
 	msg->uname = proto_string_extract(json, "user_name");
 	msg->time = cJSON_GetNumberValue(
-	    cJSON_GetObjectItem(json, "date"));
+		cJSON_GetObjectItem(json, "date"));
 
 	return msg; }
 
@@ -46,11 +46,11 @@ proto_ent_t* proto_ent_parse0(bool user, json_t* json) {
 	proto_ent_t* ent = calloc(1, sizeof(proto_ent_t));
 
 	ent->id = (proto_id)cJSON_GetNumberValue(
-	    cJSON_GetObjectItem(
-	        json, user ? "user_id" : "chat_id"));
+		cJSON_GetObjectItem(
+			json, user ? "user_id" : "chat_id"));
 
 	ent->name = proto_string_extract(
-	    json, user ? "user_name" : "chat_name");
+		json, user ? "user_name" : "chat_name");
 
 	return ent; }
 
@@ -58,7 +58,7 @@ proto_ent_t* proto_ent_parse(bool user, json_t* json) {
 	proto_ent_t* ents = NULL;
 	if (cJSON_IsArray(json))
 		PROTO_PARSE_ARRAY(
-		    json, ents, proto_ent_parse0, user)
+			json, ents, proto_ent_parse0, user)
 
 	else ents = proto_ent_parse0(user, json);
 	return ents; }
@@ -69,8 +69,8 @@ void proto_ent_free(proto_ent_t* ents) {
 // this consumes the `json` arg
 proto_res_t* proto_res_parse(json_t* json) {
 	proto_res_t* res = calloc(1, sizeof(proto_res_t));
-	res->kind = cJSON_GetNumberValue(
-	    cJSON_GetObjectItem(json, "topic"));
+	res->kind = (proto_res_kind)cJSON_GetNumberValue(
+		cJSON_GetObjectItem(json, "topic"));
 
 	switch (res->kind) {
 		case PROTO_RES_USERS:
@@ -81,12 +81,12 @@ proto_res_t* proto_res_parse(json_t* json) {
 
 		case PROTO_RES_CHATS:
 			res->val.ent = proto_ent_parse(
-			    false, cJSON_GetObjectItem(json, "chats"));
+				false, cJSON_GetObjectItem(json, "chats"));
 			break;
 
 		case PROTO_RES_MSGS:
 			res->val.msg = proto_msg_parse(
-			    cJSON_GetObjectItem(json, "messages"));
+				cJSON_GetObjectItem(json, "messages"));
 			break;
 
 		case PROTO_RES_NEW_USER:

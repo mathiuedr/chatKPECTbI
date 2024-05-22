@@ -54,7 +54,7 @@ void proto_ent_free(proto_ent_t* ents);
 
 typedef struct proto_msg_t {
 	struct proto_msg_t* next;
-	char* msg; char* uname; proto_time time;
+	char *msg, *uname; proto_time time;
 } proto_msg_t;
 
 void proto_msg_free(proto_msg_t* msgs);

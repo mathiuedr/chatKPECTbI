@@ -9,14 +9,11 @@
 typedef CURL net_sesn_t;
 typedef cJSON json_t;
 
-typedef struct {
-	enum { NET_INIT_LOGIN, NET_INIT_REG } kind;
-	const char *url0, *uname, *passwd, *name;
-} net_connect_t;
-
-void net_init(); void net_cleanup();
+bool net_init(); void net_cleanup();
 void net_close(net_sesn_t* sesn);
-net_sesn_t* net_connect(const net_connect_t* cfg);
+net_sesn_t* net_connect(
+	const char* url0, const char* uname,
+	const char* passwd, const char* name);
 
 json_t* net_recv_json(net_sesn_t* sesn);
 
