@@ -33,8 +33,13 @@ void gui_login_do(uiButton* _, void* data) {
 	char* passwd = uiEntryText(ctx->passwd);
 	char* name = ctx->reg ? uiEntryText(ctx->name) : NULL;
 
-	ctx->cb(uname, passwd, name, ctx->data);
-	uiControlDestroy(uiControl(ctx->wnd)); free(ctx); }
+	bool ok = ctx->cb(
+	    ctx->wnd, ctx->reg,
+	    uname, passwd, name, ctx->data);
+
+	if (ok) {
+		uiControlDestroy(uiControl(ctx->wnd));
+		free(ctx); } }
 
 void gui_login_switch(uiButton* _, void* data) {
 	gui_login_ctx_t* ctx = data;

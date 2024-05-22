@@ -1,16 +1,18 @@
 #include <stdlib.h>
 #include "gui.h"
 
+typedef struct {
+	bool exit;
+	gui_close_cb cb; void* data;
+} gui_window_ctx_t;
+
 bool gui_init() {
 	uiInitOptions opts = { 0 };
 	return uiInit(&opts) == NULL; }
 
 void gui_cleanup() { uiUninit(); }
 
-typedef struct {
-	bool exit;
-	gui_close_cb cb; void* data;
-} gui_window_ctx_t;
+void gui_run() { uiMain(); }
 
 int gui_window_on_close(gui_window* wnd, void* data) {
 	gui_window_ctx_t* ctx = data;
@@ -18,7 +20,7 @@ int gui_window_on_close(gui_window* wnd, void* data) {
 
 	uiControlDestroy(uiControl(wnd));
 	if (ctx->exit) uiQuit();
-	free(ctx); return 1; }
+	free(ctx); return true; }
 
 gui_window* gui_window_new(const char* title, gui_ctrl* ctrl) {
 	gui_window* wnd = uiNewWindow(title, 0, 0, false);
@@ -33,7 +35,5 @@ void gui_window_init
 
 	uiWindowOnClosing(wnd, gui_window_on_close, ctx);
 	uiControlShow(uiControl(wnd)); }
-
-void gui_run() { uiMain(); }
 
 void gui_free_str(char* str) { uiFreeText(str); }
