@@ -20,6 +20,7 @@ void app_init(); void app_cleanup();
 void app_run();
 
 // chat.c
+
 void app_on_message(void* data);
 
 #endif

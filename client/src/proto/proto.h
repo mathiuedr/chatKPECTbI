@@ -4,13 +4,17 @@
 #include "../net/net.h"
 #include <stdint.h>
 
-#define PROTO_FOREACH(list, var) for ( \
+#define LIST_FOREACH(list, var) for ( \
 	typeof(list) var = list; var != NULL; var = var->next)
 
-#define PROTO_FREE_LIST(list, cur) for ( \
+#define LIST_FREE(list, cur) for ( \
 	typeof(list) cur = list, cur##__0 = NULL; \
 	cur != NULL; \
 	free(cur##__0), cur##__0 = cur, cur = cur->next)
+
+#define LIST1_PUSH(list, val) { \
+	if ((list)->vals == NULL) (list)->vals = val; \
+	(list)->end->next = val; (list)->end = val; }
 
 typedef size_t proto_id;
 typedef size_t proto_time;
@@ -19,10 +23,10 @@ typedef size_t proto_time;
 
 typedef struct proto_ids {
 	struct proto_ids* next; proto_id id;
-} proto_ids;
+} proto_ids_t;
 
-proto_ids* proto_ids_new(proto_id id);
-void proto_ids_free(proto_ids* ids);
+proto_ids_t* proto_ids_new(proto_id id);
+void proto_ids_free(proto_ids_t* ids);
 
 json_t* proto_get_users();
 json_t* proto_get_chats();
@@ -31,10 +35,10 @@ json_t* proto_chat_connect(proto_id chat);
 json_t* proto_chat_disconnect();
 
 // this consumes the `users` arg
-json_t* proto_chat_new(const char* name, proto_ids* users);
+json_t* proto_chat_new(const char* name, proto_ids_t* users);
 
 // this consumes the `users` arg
-json_t* proto_chat_invite(proto_id chat, proto_ids* users);
+json_t* proto_chat_invite(proto_id chat, proto_ids_t* users);
 json_t* proto_chat_leave(proto_id chat);
 
 json_t* proto_chat_get_users();
@@ -50,12 +54,22 @@ typedef struct proto_ent_t {
 	char* name; proto_id id;
 } proto_ent_t;
 
+typedef struct {
+	proto_ent_t* vals;
+	proto_ent_t* end;
+} proto_ent1_t;
+
 void proto_ent_free(proto_ent_t* ents);
 
 typedef struct proto_msg_t {
 	struct proto_msg_t* next;
 	char *msg, *uname; proto_time time;
 } proto_msg_t;
+
+typedef struct {
+	proto_msg_t* vals;
+	proto_msg_t* end;
+} proto_msg1_t;
 
 void proto_msg_free(proto_msg_t* msgs);
 

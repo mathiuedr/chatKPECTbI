@@ -1,17 +1,12 @@
 #include <stdlib.h>
 #include "proto.h"
 
-#define PROTO_PUSH(root, cur, val) { \
-	if (root != NULL) { cur->next = val; cur = val; } \
-	else root = cur = val; }
-
-#define PROTO_PARSE_ARRAY(json, objs, fn, ...) { \
+#define PARSE_ARRAY(json, objs, fn, ...) { \
 	json_t* json##__0; \
-	typeof(objs) objs##__0 = NULL; \
 	cJSON_ArrayForEach(json##__0, json) { \
-		typeof(objs) obj = fn( \
+		typeof(objs.end) obj = fn( \
 			__VA_ARGS__ __VA_OPT__(,) json##__0); \
-		PROTO_PUSH(objs, objs##__0, obj); } }
+		LIST1_PUSH(&objs, obj); } }
 
 char* proto_string_extract(json_t* json, const char* key) {
 	json_t* tgt = cJSON_DetachItemFromObject(json, key);
@@ -32,14 +27,14 @@ proto_msg_t* proto_msg_parse0(json_t* json) {
 	return msg; }
 
 proto_msg_t* proto_msg_parse(json_t* json) {
-	proto_msg_t* msgs = NULL;
-	if (cJSON_IsArray(json))
-		PROTO_PARSE_ARRAY(json, msgs, proto_msg_parse0)
-	else msgs = proto_msg_parse0(json);
-	return msgs; }
+	if (cJSON_IsArray(json)) {
+		proto_msg1_t msgs = {};
+		PARSE_ARRAY(json, msgs, proto_msg_parse0);
+		return msgs.vals; }
+	else return proto_msg_parse0(json); }
 
 void proto_msg_free(proto_msg_t* msgs) {
-	PROTO_FREE_LIST(msgs, msg) {
+	LIST_FREE(msgs, msg) {
 		free(msg->msg); free(msg->uname); } }
 
 proto_ent_t* proto_ent_parse0(bool user, json_t* json) {
@@ -55,16 +50,14 @@ proto_ent_t* proto_ent_parse0(bool user, json_t* json) {
 	return ent; }
 
 proto_ent_t* proto_ent_parse(bool user, json_t* json) {
-	proto_ent_t* ents = NULL;
-	if (cJSON_IsArray(json))
-		PROTO_PARSE_ARRAY(
-			json, ents, proto_ent_parse0, user)
-
-	else ents = proto_ent_parse0(user, json);
-	return ents; }
+	if (cJSON_IsArray(json)) {
+		proto_ent1_t ents = {};
+		PARSE_ARRAY(json, ents, proto_ent_parse0, user);
+		return ents.vals; }
+	else return proto_ent_parse0(user, json); }
 
 void proto_ent_free(proto_ent_t* ents) {
-	PROTO_FREE_LIST(ents, ent) free(ent->name); }
+	LIST_FREE(ents, ent) free(ent->name); }
 
 // this consumes the `json` arg
 proto_res_t* proto_res_parse(json_t* json) {

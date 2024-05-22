@@ -1,8 +1,8 @@
 #if !defined(NET_H)
 #define NET_H
 
-#include "../../deps/curl/curl.h"
-#include "../../deps/cJSON.h"
+#include "../../include/curl/curl.h"
+#include "../../include/cJSON.h"
 #include <stdbool.h>
 #include <stdint.h>
 
