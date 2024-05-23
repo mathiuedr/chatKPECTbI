@@ -27,6 +27,15 @@ websocket_session(
     sqlite3_busy_timeout(db, 5000);
 }
 
+void websocket_session::getMyId()
+{
+    boost::json::object obj;
+    obj["topic"] = 7;
+    obj["user_id"] = id;
+    boost::shared_ptr<std::string> ss = boost::make_shared<std::string>(boost::json::serialize(obj));
+    send(ss);
+}
+
 websocket_session::
 ~websocket_session()
 {
@@ -59,6 +68,7 @@ on_accept(beast::error_code ec)
     state_->join(this);
     state_->getUserList(this);
     state_->getChatList(this);
+    getMyId();
     // Read a message
     // Do not echo back the message
     // Parse the message and set the subscription

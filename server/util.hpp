@@ -74,6 +74,7 @@ typedef std::map<boost::thread::id, ThreadInfo> ThreadsInfo;
 // Functions
 // Gets env variable
 bool getenv(const char* name, std::string& env);
+std::string decToHexa(size_t n);
 // Returns redis connection options to be used in redis connection creation
 //sw::redis::ConnectionOptions getRedisConnectionOptions();
 

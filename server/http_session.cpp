@@ -178,10 +178,12 @@ validate_auth(http::request<Body, http::basic_fields<Allocator>>& req,sqlite3* d
         //AUTH
         std::string sql = "SELECT id FROM Users WHERE login=? AND pass=?";
         sqlite3_stmt* stmt = NULL;
+        std::hash<std::string> str_hash;
+        std::string hashed_pass = decToHexa(str_hash(password.value()));
         int rc=sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL);
         std::cout << login.value().c_str() << " log , pass " << password.value().c_str()<<std::endl;
         sqlite3_bind_text(stmt, 1, login.value().c_str(), std::strlen(login.value().c_str()), NULL);
-        sqlite3_bind_text(stmt, 2, password.value().c_str(), std::strlen(password.value().c_str()), NULL);
+        sqlite3_bind_text(stmt, 2, hashed_pass.c_str(), std::strlen(hashed_pass.c_str()), NULL);
         if (sqlite3_step(stmt) != SQLITE_DONE) {
             int ans = sqlite3_column_int(stmt, 0);
             sqlite3_finalize(stmt);
@@ -232,9 +234,12 @@ register_user(http::request<Body, http::basic_fields<Allocator>>& req,sqlite3* d
         //AUTH
         std::string sql = "INSERT INTO Users(login,pass,name) VALUES(?,?,?)";
         sqlite3_stmt* stmt = NULL;
+        std::hash<std::string> str_hash;
+        std::string hashed_pass = decToHexa(str_hash(password.value()));
+        
         int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL);
         sqlite3_bind_text(stmt, 1, login.value().c_str(), std::strlen(login.value().c_str()), NULL);
-        sqlite3_bind_text(stmt, 2, password.value().c_str(), std::strlen(password.value().c_str()), NULL);
+        sqlite3_bind_text(stmt, 2, (hashed_pass).c_str(), std::strlen(hashed_pass.c_str()), NULL);
         sqlite3_bind_text(stmt, 3, name.value().c_str(), std::strlen(name.value().c_str()), NULL);
         if (sqlite3_step(stmt)== SQLITE_DONE) {
             sqlite3_reset(stmt);
@@ -242,7 +247,7 @@ register_user(http::request<Body, http::basic_fields<Allocator>>& req,sqlite3* d
             sql = "SELECT id FROM Users WHERE login=? AND pass=? AND name=?";
             int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL);
             sqlite3_bind_text(stmt, 1, login.value().c_str(), std::strlen(login.value().c_str()), NULL);
-            sqlite3_bind_text(stmt, 2, password.value().c_str(), std::strlen(password.value().c_str()), NULL);
+            sqlite3_bind_text(stmt, 2, (hashed_pass).c_str(), std::strlen(hashed_pass.c_str()), NULL);
             sqlite3_bind_text(stmt, 3, name.value().c_str(), std::strlen(name.value().c_str()), NULL);
             auto a = sqlite3_step(stmt);
             if (a != SQLITE_DONE) {

@@ -13,6 +13,41 @@ bool getenv(const char* name, std::string& env)
     return !!ret;
 }
 
+std::string decToHexa(size_t n)
+{
+    // char array to store hexadecimal number 
+    char hexaDeciNum[100];
+
+    // Counter for hexadecimal number array 
+    int i = 0;
+    while (n != 0) {
+        // Temporary variable to store remainder 
+        size_t temp = 0;
+
+        // Storing remainder in temp variable. 
+        temp = n % 16;
+
+        // Check if temp < 10 
+        if (temp < 10) {
+            hexaDeciNum[i] = temp + 48;
+            i++;
+        }
+        else {
+            hexaDeciNum[i] = temp + 55;
+            i++;
+        }
+
+        n = n / 16;
+    }
+
+    // Prsize_ting hexadecimal number 
+    // array in reverse order 
+    std::string result;
+    for (int j = i - 1; j >= 0; j--) {
+        result += hexaDeciNum[j];
+    }
+    return result;
+}
 // Returns redis connection options to be used in redis connection creation
 //sw::redis::ConnectionOptions getRedisConnectionOptions() {
 //    std::string REDIS_HOST;

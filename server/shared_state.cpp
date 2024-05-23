@@ -86,11 +86,25 @@ websocket_unsubscribe_to_symbols(websocket_session* session)
 
 void shared_state::deleteUserFromChat(websocket_session* session, int chatId)
 {
+    boost::json::object obj;
+    obj["topic"] = 9;
+    obj["user"] = chatId;
+    boost::shared_ptr<std::string> ss = boost::make_shared<std::string>(boost::json::serialize(obj));
+    for (auto sess : symbols_[std::to_string(chatId)]->sessions_) {
+        sess->send(ss);
+    }
     spsc_queue_subscriber_.push(std::make_tuple(parser::MsgType::DeleteUserFromChat, chatId, session->getId(), "",0,std::nullopt));
 }
 
 void shared_state::deleteUserAccount(websocket_session* session)
 {
+    boost::json::object obj;
+    obj["topic"] = 10;
+    obj["user_id"] = session->getId();
+    boost::shared_ptr<std::string> ss = boost::make_shared<std::string>(boost::json::serialize(obj));
+    for (auto sess : sessions_) {
+        sess->send(ss);
+    }
     spsc_queue_subscriber_.push(std::make_tuple(parser::MsgType::DeleteUserAccount, 0, session->getId(), "",0,std::nullopt));
     
 }
@@ -127,6 +141,7 @@ void shared_state::newUser(std::string name, int id)
     }
 }
 
+
 void shared_state::inviteToChat(websocket_session* session,int chatId, std::vector<int> userId,int parentUser)
 {
     boost::json::object obj;
@@ -144,8 +159,19 @@ void shared_state::inviteToChat(websocket_session* session,int chatId, std::vect
         return;
     }
     boost::shared_ptr<std::string> ss = boost::make_shared<std::string>(boost::json::serialize(obj));
+    boost::json::array arr;
     for (int id : userId) {
         sess___[std::to_string(id)]->send(ss);
+        arr.emplace_back(id);
+    }
+    obj.erase("chat_id");
+    obj.erase("chat_name");
+    obj["topic"] = 8;
+    obj["users"] = arr;
+    ss = boost::make_shared<std::string>(boost::json::serialize(obj));
+    //std::lock_guard<std::mutex> lock(symbols_[std::to_string(chatId)]->mutex_);
+    for (auto sess : symbols_[std::to_string(chatId)]->sessions_) {
+        sess->send(ss);
     }
     spsc_queue_subscriber_.push(std::make_tuple(parser::MsgType::InviteToChat, chatId, parentUser, "", 0, 
         std::make_optional<std::vector<int>>(userId)));
@@ -203,6 +229,7 @@ void shared_state::createChat(websocket_session* session, std::string chatName, 
         std::cout << "error\n";
         return;
     }
+    
     sql = "SELECT id FROM Chat WHERE adminid=? ORDER BY id DESC LIMIT 1";
     sqlite3_clear_bindings(stmt);
     sqlite3_reset(stmt);
@@ -210,10 +237,13 @@ void shared_state::createChat(websocket_session* session, std::string chatName, 
     sqlite3_bind_int(stmt, 1, session->getId());
     if (sqlite3_step(stmt) != SQLITE_DONE) {
         int id = sqlite3_column_int(stmt, 0);
+        std::string topic = std::to_string(id);
+        symbols_[topic] = boost::make_shared<symbol>(topic, "", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
         boost::json::object ms;
         ms["topic"] = 3;
         ms["chat_name"] = chatName;
         ms["chat_id"] = id;
+
         boost::shared_ptr<std::string> ss = boost::make_shared<std::string>(boost::json::serialize(ms));
         invited.push_back(std::to_string(session->getId()));
         for (auto p : invited) {
@@ -236,6 +266,8 @@ void shared_state::createChat(websocket_session* session, std::string chatName, 
     }
     sqlite3_finalize(stmt);
 }
+
+
 
 void shared_state::getMessageList(websocket_session* session) {
     std::string sql = "SELECT u.name,m.text,m.date,m.id,m.userid FROM Message m, UserInChat c ,Users u WHERE m.chatid=? AND u.id=m.userid AND c.userid = u.id AND c.chatid=m.chatid ORDER BY(date)";
@@ -376,6 +408,7 @@ parse(std::string msg, websocket_session* session)
     case parser::MsgType::DeleteUserFromChat:
     {
         int chatId = boost::json::value_to<int>(obj.at("chatId"));
+        
         deleteUserFromChat(session, chatId);
         break;
     }

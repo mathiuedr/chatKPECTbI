@@ -44,7 +44,7 @@ public:
     websocket_session(
         tcp::socket&& socket,
         boost::shared_ptr<shared_state> const& state,int id);
-
+    void getMyId();
     ~websocket_session();
     uint32_t getId() const { return this->id; }
     template<class Body, class Allocator>
