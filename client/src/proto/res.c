@@ -4,7 +4,7 @@
 #define PARSE_ARRAY(json, objs, fn, ...) { \
 	json_t* json##__0; \
 	cJSON_ArrayForEach(json##__0, json) { \
-		typeof(objs.end) obj = fn( \
+		typeof(objs.vals) obj = fn( \
 			__VA_ARGS__ __VA_OPT__(,) json##__0); \
 		LIST1_PUSH(&objs, obj); } }
 

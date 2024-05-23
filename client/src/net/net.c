@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "net.h"
 
+static const struct timeval _250MS = { 0, 250000 };
+
 typedef struct curl_ws_frame net_frame0_t;
 typedef struct {
 	char* buf; size_t len;
@@ -11,7 +13,6 @@ void net_frame_free(net_frame_t* frm) { free(frm->buf); }
 bool net_init() {
 	return curl_global_init(CURL_GLOBAL_ALL) == CURLE_OK; }
 
-void net_close(net_sesn_t* sesn) { curl_easy_cleanup(sesn); }
 void net_cleanup() { curl_global_cleanup(); }
 
 bool net_make_fd_set(net_sesn_t* sesn, fd_set* fds) {
@@ -29,7 +30,7 @@ bool net_recv_block(
 	CURLcode err = curl_ws_recv(sesn, buf, len, recv, frame);
 	if (err == CURLE_AGAIN) {
 		fd_set fds; net_make_fd_set(sesn, &fds);
-		if (select(0, &fds, NULL, NULL, NULL) != 1)
+		if (select(0, &fds, NULL, NULL, &_250MS) != 1)
 			return false;
 
 		err = curl_ws_recv(sesn, buf, len, recv, frame); }
@@ -43,12 +44,17 @@ bool net_send_block(
 	CURLcode err = curl_ws_send(sesn, buf, len, sent, frag, flags);
 	if (err == CURLE_AGAIN) {
 		fd_set fds; net_make_fd_set(sesn, &fds);
-		if (select(0, NULL, &fds, NULL, NULL) != 1)
+		if (select(0, NULL, &fds, NULL, &_250MS) != 1)
 			return false;
 
 		err = curl_ws_send(sesn, buf, len, sent, frag, flags); }
 
 	return err == CURLE_OK; }
+
+void net_close(net_sesn_t* sesn) {
+	size_t _sent;
+	net_send_block(sesn, NULL, 0, &_sent, 0, CURLWS_CLOSE);
+	curl_easy_cleanup(sesn); }
 
 bool net_recv_frame(net_sesn_t* sesn, net_frame_t* frm) {
 	size_t len = 256, idx = 0, recv;

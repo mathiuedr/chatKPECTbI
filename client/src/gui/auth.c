@@ -37,9 +37,7 @@ void gui_auth_do(uiButton* _, void* data) {
 		ctx->wnd->wnd, uname,
 		passwd, name, ctx->data);
 
-	if (ok) {
-		gui_window_close(ctx->wnd, false);
-		free(ctx); } }
+	if (ok) gui_window_close(ctx->wnd); }
 
 void gui_auth_switch(uiButton* _, void* data) {
 	gui_auth_ctx_t* ctx = data;
@@ -57,7 +55,7 @@ gui_window_t* gui_auth(gui_auth_cb cb, void* data) {
 	uiForm* form = uiNewForm();
 
 	ctx->wnd = gui_window_new(
-		"chat-client: auth", uiControl(ctx->grp), NULL, ctx);
+		"chat-client: auth", uiControl(ctx->grp), free, ctx);
 
 	ctx->uname = uiNewEntry();
 	ctx->passwd = uiNewPasswordEntry();

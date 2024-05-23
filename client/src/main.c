@@ -69,21 +69,25 @@ void* app_listen(void* data) {
 	app_t* app = data;
 	while (true) {
 		pthread_mutex_lock(&app->mtx);
-
 		json_t* json = net_recv_json(app->sesn);
-		proto_res_t* res = proto_res_parse(json);
 
-		app_msg_t* msg = calloc(1, sizeof(app_msg_t));
-		msg->app = app; msg->res = res;
+		if (json != NULL) {
+			proto_res_t* res = proto_res_parse(json);
+			app_msg_t* msg = calloc(1, sizeof(app_msg_t));
+			msg->app = app; msg->res = res;
+
+			uiQueueMain(app_on_message, msg); }
 
 		pthread_mutex_unlock(&app->mtx);
-		uiQueueMain(app_on_message, msg); }
+		pthread_testcancel(); }
 	
 	return NULL; }
 
 void app_on_close(void* data) {
 	app_t* app = data;
 	pthread_cancel(app->listen);
+	pthread_join(app->listen, NULL);
+
 	pthread_mutex_destroy(&app->mtx);
 	net_close(app->sesn); }
 
@@ -91,8 +95,11 @@ void app_on_connect(proto_id chat, void* data) {
 	app_t* app = data; }
 
 void app_on_new_chat
-(char* name, proto_ids_t* ids, void* data) {
-	app_t* app = data; gui_free_str(name); }
+(char* name, proto_id_t* ids, void* data) {
+	app_t* app = data;
+	gui_free_str(name); proto_id_free(ids); }
+
+void app_chats_on_close(void* data);
 
 bool app_on_auth(
 	gui_window* wnd, char* uname,
@@ -120,14 +127,17 @@ bool app_on_auth(
 		app_on_connect, app_on_new_chat, app);
 
 	gui_window_init(
-	    app->gui.chats->wnd, NULL, NULL, false);
-	
+		app->gui.chats->wnd, app_chats_on_close, app);
 	return true; }
+
+void app_start() {
+	gui_window_t* wnd = gui_auth(app_on_auth, NULL);
+	gui_window_init(wnd, gui_quit_cb, NULL); }
+
+void app_chats_on_close(void* data) {
+	app_on_close(data); app_start(); }
 
 int main() {
 	gui_init(); net_init();
-
-	gui_window_t* wnd = gui_auth(app_on_auth, NULL);
-	gui_window_init(wnd, NULL, NULL, true); gui_run();
-
+	app_start(); gui_run();
 	gui_cleanup(); net_cleanup(); return 0; }

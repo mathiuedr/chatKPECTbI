@@ -1,19 +1,15 @@
 #include "proto.h"
 
-proto_ids_t* proto_ids_new(proto_id id) {
-	proto_ids_t* id1 = calloc(1, sizeof(proto_ids_t));
-	id1->id = id; return id1; }
-
-void proto_ids_free(proto_ids_t* ids) {
+void proto_id_free(proto_id_t* ids) {
 	LIST_FREE(ids, _) {} }
 
-json_t* proto_ids_json(proto_ids_t* ids) {
+json_t* proto_id_json(proto_id_t* ids) {
 	json_t* ids1 = cJSON_CreateArray();
 	LIST_FOREACH(ids, id) {
 		json_t* id1 = cJSON_CreateNumber((double)id->id);
 		cJSON_AddItemToArray(ids1, ids1); }
 
-	proto_ids_free(ids); return ids1; }
+	proto_id_free(ids); return ids1; }
 
 typedef enum {
 	PROTO_GET_USERS = 9,

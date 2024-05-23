@@ -19,6 +19,19 @@
 		(list)->end->next = val; \
 		(list)->end = val; } }
 
+#define LIST1_DELETE(list, id_) { \
+	typeof((list)->vals) prev = NULL; \
+	LIST_FOREACH((list)->vals, obj) { \
+		if (obj->id > id_) break; \
+		else if (obj->id == id_) { \
+			if (obj == (list)->vals) \
+				(list)->vals = (list)->vals->next; \
+			else if (obj == (list)->end) \
+				(list)->end = prev; \
+			if (prev != NULL) prev->next = obj->next; \
+			free(obj); } \
+		else prev = obj; } }
+
 typedef size_t proto_id;
 typedef size_t proto_time;
 
@@ -26,10 +39,12 @@ typedef size_t proto_time;
 
 typedef struct proto_ids {
 	struct proto_ids* next; proto_id id;
-} proto_ids_t;
+} proto_id_t;
 
-proto_ids_t* proto_ids_new(proto_id id);
-void proto_ids_free(proto_ids_t* ids);
+typedef struct {
+	proto_id_t *vals, *end; } proto_id1_t;
+
+void proto_id_free(proto_id_t* ids);
 
 json_t* proto_get_users();
 json_t* proto_get_chats();
@@ -38,10 +53,10 @@ json_t* proto_chat_connect(proto_id chat);
 json_t* proto_chat_disconnect();
 
 // this consumes the `users` arg
-json_t* proto_chat_new(const char* name, proto_ids_t* users);
+json_t* proto_chat_new(const char* name, proto_id_t* users);
 
 // this consumes the `users` arg
-json_t* proto_chat_invite(proto_id chat, proto_ids_t* users);
+json_t* proto_chat_invite(proto_id chat, proto_id_t* users);
 json_t* proto_chat_leave(proto_id chat);
 
 json_t* proto_chat_get_users();
