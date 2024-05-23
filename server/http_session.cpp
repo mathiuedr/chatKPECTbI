@@ -179,7 +179,7 @@ validate_auth(http::request<Body, http::basic_fields<Allocator>>& req,sqlite3* d
         std::string sql = "SELECT id FROM Users WHERE login=? AND pass=?";
         sqlite3_stmt* stmt = NULL;
         std::hash<std::string> str_hash;
-        std::string hashed_pass = decToHexa(str_hash(password.value()));
+        std::string hashed_pass = SHA256HashString(password.value());
         int rc=sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL);
         std::cout << login.value().c_str() << " log , pass " << password.value().c_str()<<std::endl;
         sqlite3_bind_text(stmt, 1, login.value().c_str(), std::strlen(login.value().c_str()), NULL);
@@ -235,7 +235,7 @@ register_user(http::request<Body, http::basic_fields<Allocator>>& req,sqlite3* d
         std::string sql = "INSERT INTO Users(login,pass,name) VALUES(?,?,?)";
         sqlite3_stmt* stmt = NULL;
         std::hash<std::string> str_hash;
-        std::string hashed_pass = decToHexa(str_hash(password.value()));
+        std::string hashed_pass = SHA256HashString(password.value());
         
         int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL);
         sqlite3_bind_text(stmt, 1, login.value().c_str(), std::strlen(login.value().c_str()), NULL);

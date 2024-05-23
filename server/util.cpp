@@ -48,6 +48,17 @@ std::string decToHexa(size_t n)
     }
     return result;
 }
+std::string SHA256HashString(std::string aString) {
+    std::string digest;
+    CryptoPP::SHA256 hash;
+
+    CryptoPP::StringSource foo(aString, true,
+        new CryptoPP::HashFilter(hash,
+            new CryptoPP::Base64Encoder(
+                new CryptoPP::StringSink(digest))));
+
+    return digest;
+}
 // Returns redis connection options to be used in redis connection creation
 //sw::redis::ConnectionOptions getRedisConnectionOptions() {
 //    std::string REDIS_HOST;

@@ -88,7 +88,18 @@ void shared_state::deleteUserFromChat(websocket_session* session, int chatId)
 {
     boost::json::object obj;
     obj["topic"] = 9;
-    obj["user"] = chatId;
+    obj["user_id"] = session->getId();
+    std::string sql = "SELECT Users.name FROM Users WHERE Users.id=?";
+    sqlite3_stmt* stmt = NULL;
+    int rc = sqlite3_prepare_v2(session->db, sql.c_str(), -1, &stmt, NULL);
+    sqlite3_bind_int(stmt, 1, session->getId());
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        obj["user_name"] = std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
+    }
+    else {
+        std::cout << "error in searching chatname\n";
+        return;
+    }
     boost::shared_ptr<std::string> ss = boost::make_shared<std::string>(boost::json::serialize(obj));
     for (auto sess : symbols_[std::to_string(chatId)]->sessions_) {
         sess->send(ss);

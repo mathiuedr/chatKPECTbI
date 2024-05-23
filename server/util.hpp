@@ -41,6 +41,10 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <boost/url.hpp>
+#include "cryptlib.h"
+#include "sha.h"
+#include "filters.h"
+#include "base64.h"
 
 
 /* Using namespaces */
@@ -77,6 +81,6 @@ bool getenv(const char* name, std::string& env);
 std::string decToHexa(size_t n);
 // Returns redis connection options to be used in redis connection creation
 //sw::redis::ConnectionOptions getRedisConnectionOptions();
-
+std::string SHA256HashString(std::string aString);
 
 #endif //endSRAVZ_BACKENDCPP_UTIL_H
