@@ -39,9 +39,11 @@ void gui_auth_do(uiButton* _, void* data) {
 		(name != NULL && strlen(name) == 0))
 	{
 		gui_msg_box(
-		    ctx->wnd->wnd, "chat-client",
-		    "please specify all fields!", MB_ICONERROR);
+			ctx->wnd->wnd, "chat-client",
+			"please specify all fields!", MB_ICONERROR);
 
+		gui_str_free(uname); gui_str_free(passwd);
+		if (name != NULL) gui_str_free(name);
 		return; }
 
 	bool ok = ctx->cb(

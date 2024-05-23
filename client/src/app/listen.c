@@ -30,7 +30,7 @@ void app_remove_user(app_t* app, proto_id id) {
 	if (ent) {
 		LIST1_DELETE(&app->state.users, ent0, ent);
 		if (!app->connd)
-			gui_chats_remove_user(app->gui.chats, id); } }
+			gui_users_remove(app->gui.menu->child, id); } }
 
 void app_set_entries(app_t* app, bool user, proto_res_t* res) {
 	proto_ent1_t* ents = user
@@ -41,7 +41,7 @@ void app_set_entries(app_t* app, bool user, proto_res_t* res) {
 	LIST_FOREACH(ents->vals, ent) ents->end = ent;
 
 	if (!app->connd)
-		gui_chats_refresh(app->gui.chats, user);
+		gui_menu_refresh(app->gui.menu, user);
 	proto_res_free(res, true); }
 
 void app_add_entry(app_t* app, bool user, proto_res_t* res) {
@@ -51,7 +51,7 @@ void app_add_entry(app_t* app, bool user, proto_res_t* res) {
 		     : &app->state.chats, ent);
 
 	if (!app->connd)
-		gui_chats_add_entry(app->gui.chats, user, ent);
+		gui_menu_add(app->gui.menu, user, ent);
 	proto_res_free(res, true); }
 
 void app_on_message(void* data) {
@@ -61,7 +61,7 @@ void app_on_message(void* data) {
 	switch (msg->res->kind) {
 		case PROTO_RES_ID:
 		case PROTO_RES_USER_DELETE:
-			app_remove_user(app, msg->res->val.ids->id); break;
+			app_remove_user(app, msg->res->val.id->id); break;
 
 		case PROTO_RES_USERS:
 			app_set_entries(app, true, msg->res); break;

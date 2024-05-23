@@ -53,13 +53,13 @@ bool app_on_auth(
 	app->sesn = sesn; app_mutex_init(&app->mtx);
 	pthread_create(&app->listen, NULL, app_listen, app);
 
-	app->gui.chats = gui_chats(
+	app->gui.menu = gui_menu(
 		&app->state.users, &app->state.chats,
 		app_on_connect, app_on_chat0,
 		app_on_leave, app_on_del_acc, app);
 
 	gui_window_init(
-		app->gui.chats->wnd, app_chats_on_close, app);
+		app->gui.menu->wnd, app_chats_on_close, app);
 	return true; }
 
 void app_init() { gui_init(); net_init(); }

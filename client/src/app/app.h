@@ -19,7 +19,7 @@ typedef struct {
 
 	bool connd;
 	union {
-		gui_chats_t* chats;
+		gui_menu_t* menu;
 		/* gui_chat_t* chat; */ } gui;
 
 	struct {

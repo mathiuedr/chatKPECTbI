@@ -29,6 +29,7 @@ void proto_res_free(proto_res_t* res, bool move) {
 		case PROTO_RES_CHATS:
 		case PROTO_RES_CHAT_USERS:
 		case PROTO_RES_CHAT_NEW:
+		case PROTO_RES_CHAT_USER_LEAVE:
 			proto_ent_free(res->val.ent); break;
 
 		case PROTO_RES_MSGS:
@@ -38,7 +39,6 @@ void proto_res_free(proto_res_t* res, bool move) {
 		case PROTO_RES_ID:
 		case PROTO_RES_USER_DELETE:
 		case PROTO_RES_CHAT_USER_JOIN:
-		case PROTO_RES_CHAT_USER_LEAVE:
-			proto_id_free(res->val.ids); break; }
+			proto_id_free(res->val.id); break; }
 
 	free(res); }

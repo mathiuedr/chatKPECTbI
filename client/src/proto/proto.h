@@ -56,12 +56,12 @@ typedef struct proto_msg_t {
 } proto_msg_t;
 
 typedef struct {
-	proto_msg_t* vals;
-	proto_msg_t* end;
+	proto_msg_t* vals; proto_msg_t* end;
 } proto_msg1_t;
 
 proto_msg_t* proto_msg_new
 (char* msg_, char* uname, proto_time time);
+
 void proto_msg_free(proto_msg_t* msgs);
 
 typedef struct proto_ids {
@@ -115,7 +115,7 @@ typedef struct {
 	union {
 		proto_ent_t* ent;
 		proto_msg_t* msg;
-		proto_id_t* ids; } val;
+		proto_id_t* id; } val;
 } proto_res_t;
 
 // this consumes the `json` arg
