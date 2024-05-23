@@ -101,7 +101,7 @@ void gui_menu_add
 
 void gui_menu_refresh(gui_menu_t* menu, bool user);
 
-typedef void (*gui_chat_cb)(const char* str, void* data);
+typedef void (*gui_chat_cb)(char* str, void* data);
 
 typedef struct {
 	gui_window_t* wnd; gui_users_t* child;
@@ -111,7 +111,7 @@ typedef struct {
 	
 	struct {
 		proto_ent_t** base;
-		proto_ent1_t* mask; } state;
+		proto_id1_t mask; } state;
 
 	struct {
 		gui_chat_cb chat;
@@ -120,13 +120,14 @@ typedef struct {
 } gui_chat_t;
 
 gui_chat_t* gui_chat(
-    gui_chat_cb chat_cb,
-    gui_users_cb invite_cb, void* data);
+	proto_ent_t** users,
+	gui_chat_cb chat_cb,
+	gui_users_cb invite_cb, void* data);
 
 void gui_chat_add(gui_chat_t* chat, proto_msg_t* msgs);
-void gui_chat_mask(gui_chat_t* chat);
+void gui_chat_refresh(gui_chat_t* chat);
 
-void gui_chat_join(gui_chat_t* chat, proto_id id);
+void gui_chat_join(gui_chat_t* chat, proto_id_t* ids);
 void gui_chat_leave(gui_chat_t* chat, proto_ent_t* ent);
 
 #endif

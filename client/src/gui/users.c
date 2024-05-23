@@ -4,24 +4,26 @@
 #include "gui.h"
 
 void gui_users_do(uiButton* _, void* data) {
-	gui_users_t* chats = data;
+	gui_users_t* users = data;
 	proto_id1_t ids = {};
 
-	char* name = uiEntryText(chats->title);
-	if (strlen(name) == 0) {
-		gui_msg_box(
-			chats->wnd->wnd, "chat-client",
-			"please specify a title!", MB_ICONERROR);
+	char* title = NULL;
+	if (users->title) {
+		title = uiEntryText(users->title);
+		if (strlen(title) == 0) {
+			gui_msg_box(
+				users->wnd->wnd, "chat-client",
+				"please specify a title!", MB_ICONERROR);
 
-		gui_str_free(name); return; }
+			gui_str_free(title); return; } }
 	
-	LIST_FOREACH(chats->gui.chks.vals, chk)
+	LIST_FOREACH(users->gui.chks.vals, chk)
 		if (uiCheckboxChecked(chk->chk)) {
-			proto_id_t* id1 = calloc(1, sizeof(proto_id_t));
-			id1->id = chk->id; LIST1_PUSH(&ids, id1); }
+			proto_id_t* id1 = proto_id_new(chk->id);
+			LIST1_PUSH(&ids, id1); }
 
-	chats->cb(name, ids.vals, chats->data);
-	gui_window_close(chats->wnd, true); }
+	users->cb(title, ids.vals, users->data);
+	gui_window_close(users->wnd, true); }
 
 void gui_users_add(gui_users_t* users, const proto_ent_t* ent) {
 	uiCheckbox* chk = uiNewCheckbox(ent->name);
@@ -35,13 +37,18 @@ void gui_users_init(gui_users_t* users) {
 	if (gui->box != NULL) {
 		uiBoxDelete(gui->box0, 0);
 		uiControlDestroy(uiControl(gui->box));
+
+		gui_check_free(users->gui.chks.vals);
+		users->gui.chks.vals = users->gui.chks.end = NULL;
+
 		gui_window_resize(users->wnd); }
 
 	gui->box = uiNewVerticalBox();
 	uiBoxAppend(gui->box0, uiControl(gui->box), true);
 	
 	uiBoxSetPadded(gui->box, true);
-	LIST_FOREACH(*users->state, user) gui_users_add(users, user); }
+	LIST_FOREACH(*users->state, user)
+		gui_users_add(users, user); }
 
 void gui_users_free(void* data) {
 	gui_users_t* users = data;
@@ -58,32 +65,34 @@ gui_users_t* gui_users(
 	uiBox *box = uiNewVerticalBox(),
 	      *inner = uiNewVerticalBox();
 
-	uiForm *form = uiNewForm();
-
-	users->title = uiNewEntry();
 	users->gui.box0 = uiNewVerticalBox();
 
-	uiButton* do_ = uiNewButton("new chat!");
+	uiButton* do_ = uiNewButton("invite!");
 	users->wnd = gui_window_new(
 		uiControl(box), gui_users_free, users);
 
 	uiBoxSetPadded(box, true);
-	uiBoxAppend(box, uiControl(form), false);
+	if (title) {
+		uiForm *form = uiNewForm();
+		uiBoxAppend(box, uiControl(form), false);
+
+		users->title = uiNewEntry();
+
+		uiFormSetPadded(form, true);
+		uiFormAppend(
+		    form, "title",
+		    uiControl(users->title), false); }
+
 	uiBoxAppend(box, uiControl(grp), true);
 	
 	uiGroupSetMargined(grp, true);
 	uiGroupSetChild(grp, uiControl(inner));
-
-	uiFormSetPadded(form, true);
-	uiFormAppend(form, "title", uiControl(users->title), false);
 	
 	uiBoxSetPadded(inner, true);
 	uiBoxAppend(inner, uiControl(users->gui.box0), true);
 	uiBoxAppend(inner, uiControl(do_), false);
 
 	gui_users_init(users);
-	if (!title) uiControlHide(uiControl(users->title));
-	
 	uiButtonOnClicked(do_, gui_users_do, users);
 
 	return users; }
@@ -92,8 +101,9 @@ void gui_users_remove(gui_users_t* users, proto_id id) {
 	size_t idx; gui_check_t *chk0, *chk;
 	LIST_FIND(users->gui.chks.vals, id, idx, chk0, chk);
 
-	uiBoxDelete(users->gui.box, idx);
-	uiControlDestroy(uiControl(chk->chk));
-	gui_window_resize(users->wnd);
+	if (chk) {
+		uiBoxDelete(users->gui.box, idx);
+		uiControlDestroy(uiControl(chk->chk));
+		gui_window_resize(users->wnd);
 	
-	LIST1_DELETE(&users->gui.chks, chk0, chk); }
+		LIST1_DELETE(&users->gui.chks, chk0, chk); } }

@@ -20,11 +20,11 @@ typedef struct {
 	bool connd;
 	union {
 		gui_menu_t* menu;
-		/* gui_chat_t* chat; */ } gui;
+		gui_chat_t* chat; } gui;
 
 	struct {
-		proto_ent1_t users, users0, chats;
-		proto_id self; } state;
+		proto_ent1_t users, chats;
+		proto_id self, chat; } state;
 } app_t;
 
 typedef struct {
