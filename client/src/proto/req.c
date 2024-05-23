@@ -6,7 +6,12 @@ json_t* proto_id_dump(proto_id_t* ids) {
 		json_t* id1 = cJSON_CreateNumber((double)id->id);
 		cJSON_AddItemToArray(ids1, id1); }
 
-	proto_id_free(ids); return ids1; }
+	proto_id_free(ids);
+	char* str0 = cJSON_PrintUnformatted(ids1);
+	cJSON_Delete(ids1);
+
+	json_t* str = cJSON_CreateStringReference(str0);
+	str->type ^= cJSON_IsReference; return str; }
 
 typedef enum {
 	PROTO_GET_USERS = 9,
@@ -35,7 +40,7 @@ json_t* proto_get_users() { return proto_req_new(PROTO_GET_USERS); }
 json_t* proto_get_chats() { return proto_req_new(PROTO_GET_CHATS); }
 
 json_t* proto_chat_connect(proto_id chat) {
-	json_t* req = proto_req_new(PROTO_CHAT_SEND);
+	json_t* req = proto_req_new(PROTO_CHAT_CONNECT);
 	cJSON_AddNumberToObject(req, "to", (double)chat);
 	return req; }
 
@@ -43,19 +48,19 @@ json_t* proto_chat_disconnect() { return proto_req_new(PROTO_CHAT_DISCONNECT); }
 
 // this consumes the `users` arg
 json_t* proto_chat_new(const char* name, proto_id_t* users) {
-	json_t* req = proto_req_new(PROTO_CHAT_SEND);
+	json_t* req = proto_req_new(PROTO_CHAT_NEW);
 	cJSON_AddStringToObject(req, "chatName", name);
 	cJSON_AddItemToObject(req, "Invited", proto_id_dump(users));
 	return req; }
 
 // this consumes the `users` arg
 json_t* proto_chat_invite(proto_id chat, proto_id_t* users) {
-	json_t* req = proto_req_new(PROTO_CHAT_SEND);
+	json_t* req = proto_req_new(PROTO_CHAT_INVITE);
 	cJSON_AddItemToObject(req, "Invited", proto_id_dump(users));
 	return req; }
 
 json_t* proto_chat_leave(proto_id chat) {
-	json_t* req = proto_req_new(PROTO_CHAT_SEND);
+	json_t* req = proto_req_new(PROTO_CHAT_LEAVE);
 	cJSON_AddNumberToObject(req, "chatId", (double)chat);
 	return req; }
 

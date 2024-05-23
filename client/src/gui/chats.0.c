@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "gui.h"
 
 void gui_chats0_do(uiButton* _, void* data) {
@@ -7,6 +8,12 @@ void gui_chats0_do(uiButton* _, void* data) {
 	proto_id1_t ids = {};
 
 	char* name = uiEntryText(chats->title);
+	if (strlen(name) == 0) {
+		gui_msg_box(
+		    chats->wnd->wnd, "chat-client",
+		    "please specify a title!", MB_ICONERROR);
+
+		return; }
 	
 	LIST_FOREACH(chats->gui.chks.vals, chk)
 		if (uiCheckboxChecked(chk->chk)) {
@@ -14,35 +21,36 @@ void gui_chats0_do(uiButton* _, void* data) {
 			id1->id = chk->id; LIST1_PUSH(&ids, id1); }
 
 	chats->cb(name, ids.vals, chats->data);
-	gui_window_close(chats->wnd); }
+	gui_window_close(chats->wnd, true); }
 
 void gui_chats0_add_user
-(gui_chats0_t* chats, const proto_ent_t* ent) {
+(gui_chats0_t* chats0, const proto_ent_t* ent) {
 	uiCheckbox* chk = uiNewCheckbox(ent->name);
-	LIST1_PUSH(&chats->gui.chks, gui_check_new(chk, ent->id));
-	uiBoxAppend(chats->gui.box, uiControl(chk), false); }
+	gui_check_t* chk1 = gui_check_new(chk, ent->id);
 
-void gui_chats0_init(gui_chats0_t* chats) {
-	typeof(chats->gui)* gui = &chats->gui;
+	LIST1_PUSH(&chats0->gui.chks, chk1);
+	uiBoxAppend(chats0->gui.box, uiControl(chk), false); }
 
+void gui_chats0_init(gui_chats0_t* chats0) {
+	typeof(chats0->gui)* gui = &chats0->gui;
 	if (gui->box != NULL) {
 		uiBoxDelete(gui->box0, 0);
-		uiControlDestroy(uiControl(gui->box)); }
+		uiControlDestroy(uiControl(gui->box));
+		gui_window_resize(chats0->wnd); }
 
 	gui->box = uiNewVerticalBox();
 	uiBoxAppend(gui->box0, uiControl(gui->box), true);
 	
 	uiBoxSetPadded(gui->box, true);
-	LIST_FOREACH(*chats->state, user)
-		gui_chats0_add_user(chats, user); }
+	LIST_FOREACH(*chats0->state, user)
+		gui_chats0_add_user(chats0, user); }
 
 void gui_chats0_free(void* data) {
 	gui_chats0_t* chats0 = data;
-	gui_check_free(chats0->gui.chks.vals);
-	free(chats0); }
+	gui_check_free(chats0->gui.chks.vals); free(chats0); }
 	
 gui_chats0_t* gui_chats0
-(proto_ent_ptr users, gui_chat_new_cb cb, void* data) {
+(proto_ent_t** users, gui_chat_new_cb cb, void* data) {
 	gui_chats0_t* chats0 = calloc(1, sizeof(gui_chats0_t));
 	chats0->state = users; chats0->cb = cb; chats0->data = data;
 
@@ -79,8 +87,13 @@ gui_chats0_t* gui_chats0
 
 	return chats0; }
 
+void gui_chats0_remove_user
+(gui_chats0_t* chats0, proto_id id) {
+	size_t idx; gui_check_t *chk0, *chk;
+	LIST_FIND(chats0->gui.chks.vals, id, idx, chk0, chk);
 
-void gui_chats0_add_user
-(gui_chats0_t* chats, const proto_ent_t* ent);
-
-void gui_chats0_init(gui_chats0_t* chats);
+	uiBoxDelete(chats0->gui.box, idx);
+	uiControlDestroy(uiControl(chk->chk));
+	gui_window_resize(chats0->wnd);
+	
+	LIST1_DELETE(&chats0->gui.chks, chk0, chk); }

@@ -24,14 +24,24 @@ void app_mutex_free(app_mutex_t* mtx) {
 	pthread_mutex_destroy(&mtx->mtx);
 	pthread_cond_destroy(&mtx->cond); }
 
+void app_remove_user(app_t* app, proto_id id) {
+	size_t _idx; proto_ent_t *ent0, *ent;
+	LIST_FIND(app->state.users.vals, id, _idx, ent0, ent);
+	if (ent) {
+		LIST1_DELETE(&app->state.users, ent0, ent);
+		if (!app->connd)
+			gui_chats_remove_user(app->gui.chats, id); } }
+
 void app_set_entries(app_t* app, bool user, proto_res_t* res) {
 	proto_ent1_t* ents = user
 		? &app->state.users : &app->state.chats;
 
 	proto_ent_free(ents->vals);
-	ents->vals = ents->end = res->val.ent;
+	ents->vals = res->val.ent;
+	LIST_FOREACH(ents->vals, ent) ents->end = ent;
 
-	gui_chats_refresh(app->gui.chats, user);
+	if (!app->connd)
+		gui_chats_refresh(app->gui.chats, user);
 	proto_res_free(res, true); }
 
 void app_add_entry(app_t* app, bool user, proto_res_t* res) {
@@ -40,7 +50,8 @@ void app_add_entry(app_t* app, bool user, proto_res_t* res) {
 		user ? &app->state.users
 		     : &app->state.chats, ent);
 
-	gui_chats_add_entry(app->gui.chats, user, ent);
+	if (!app->connd)
+		gui_chats_add_entry(app->gui.chats, user, ent);
 	proto_res_free(res, true); }
 
 void app_on_message(void* data) {
@@ -48,14 +59,16 @@ void app_on_message(void* data) {
 	app_t* app = msg->app;
 
 	switch (msg->res->kind) {
-		case PROTO_RES_ID: break;
+		case PROTO_RES_ID:
+		case PROTO_RES_USER_DELETE:
+			app_remove_user(app, msg->res->val.ids->id); break;
+
 		case PROTO_RES_USERS:
 			app_set_entries(app, true, msg->res); break;
 
 		case PROTO_RES_USER_NEW:
 			app_add_entry(app, true, msg->res); break;
 
-		case PROTO_RES_USER_DELETE: break;
 		case PROTO_RES_CHATS:
 			app_set_entries(app, false, msg->res); break;
 

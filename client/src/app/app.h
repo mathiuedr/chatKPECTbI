@@ -16,7 +16,11 @@ typedef struct {
 typedef struct {
 	net_sesn_t* sesn;
 	app_mutex_t mtx; pthread_t listen;
-	struct { gui_chats_t* chats; } gui;
+
+	bool connd;
+	union {
+		gui_chats_t* chats;
+		/* gui_chat_t* chat; */ } gui;
 
 	struct {
 		proto_ent1_t users, users0, chats;

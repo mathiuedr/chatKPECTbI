@@ -92,17 +92,17 @@ proto_res_t* proto_res_parse(json_t* json) {
 
 		case PROTO_RES_ID:
 		case PROTO_RES_USER_DELETE:
-			res->val.ids.ids = proto_id_parse0(
-				cJSON_GetObjectItem(json, "id")); break;
+			res->val.ids = proto_id_parse0(
+				cJSON_GetObjectItem(json, "user_id")); break;
 
 		case PROTO_RES_CHAT_USER_JOIN:
-		case PROTO_RES_CHAT_USER_LEAVE:
-			res->val.ids.ids = proto_id_parse(
-				cJSON_GetObjectItem(json, "ids"));
+			res->val.ids = proto_id_parse(
+				cJSON_GetObjectItem(json, "users"));
+			break;
 
-			res->val.ids.tgt = 
-				(proto_id)cJSON_GetNumberValue(
-					cJSON_GetObjectItem(json, "to"));
+		case PROTO_RES_CHAT_USER_LEAVE:
+			res->val.ids = proto_id_parse(
+				cJSON_GetObjectItem(json, "user"));
 			break; }
 
 	cJSON_Delete(json); return res; }

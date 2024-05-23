@@ -3,20 +3,25 @@
 
 void app_start();
 
-void app_on_connect(proto_id chat, void* data) {
-	app_t* app = data;
-	json_t* json = proto_chat_connect(chat); }
-
-void app_on_new_chat
-(char* name, proto_id_t* ids, void* data) {
-	app_t* app = data;
-	json_t* json = proto_chat_new(name, ids);
-
+void app_send(app_t* app, json_t* json) {
 	app_mutex_lock(&app->mtx);
 	net_send_json(app->sesn, json);
-	app_mutex_unlock(&app->mtx);
+	app_mutex_unlock(&app->mtx); }
 
+void app_on_connect(proto_id chat, void* data) {
+	app_t* app = data;
+	app_send(app, proto_chat_connect(chat));
+	/* TODO */ }
+
+void app_on_chat0(char* name, proto_id_t* ids, void* data) {
+	app_send((app_t*)data, proto_chat_new(name, ids));
 	gui_str_free(name); proto_id_free(ids); }
+
+void app_on_leave(proto_id id, void* data) {
+	app_send((app_t*)data, proto_chat_leave(id)); };
+
+void app_on_del_acc(proto_id _, void* data) {
+	app_send((app_t*)data, proto_delete_account()); }
 
 void app_on_close(void* data) {
 	app_t* app = data;
@@ -49,9 +54,9 @@ bool app_on_auth(
 	pthread_create(&app->listen, NULL, app_listen, app);
 
 	app->gui.chats = gui_chats(
-		(proto_ent_ptr)&app->state.users.vals,
-		(proto_ent_ptr)&app->state.chats.vals,
-		app_on_connect, app_on_new_chat, app);
+		&app->state.users, &app->state.chats,
+		app_on_connect, app_on_chat0,
+		app_on_leave, app_on_del_acc, app);
 
 	gui_window_init(
 		app->gui.chats->wnd, app_chats_on_close, app);

@@ -37,9 +37,14 @@ void gui_window_init
 	uiWindowOnClosing(wnd->wnd, gui_window_on_close, wnd);
 	uiControlShow(uiControl(wnd->wnd)); }
 
-void gui_window_close(gui_window_t* wnd) {
-	wnd->exit.fn = NULL;
-	uiControlDestroy(uiControl(wnd->wnd)); }
+void gui_window_resize(gui_window_t* wnd) {
+	uiWindowSetContentSize(wnd->wnd, 0, 0); }
+
+void gui_window_close(gui_window_t* wnd, bool exit) {
+	if (!exit) wnd->exit.fn = NULL;
+
+	HWND wnd0 = (HWND)uiControlHandle(uiControl(wnd->wnd));
+	SendMessageA(wnd0, WM_CLOSE, 0, 0); }
 
 gui_check_t* gui_check_new(uiCheckbox* chk, proto_id id) {
 	gui_check_t* chk1 = calloc(1, sizeof(gui_check_t));

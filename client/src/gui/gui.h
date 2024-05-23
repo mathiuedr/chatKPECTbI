@@ -26,7 +26,8 @@ gui_window_t* gui_window_new
 void gui_window_init
 (gui_window_t* wnd, gui_close_cb exit_cb, void* data);
 
-void gui_window_close(gui_window_t* wnd);
+void gui_window_resize(gui_window_t* wnd);
+void gui_window_close(gui_window_t* wnd, bool exit);
 
 typedef struct gui_check_t {
 	struct gui_check_t* next;
@@ -49,10 +50,7 @@ typedef bool (*gui_auth_cb)(
 
 gui_window_t* gui_auth(gui_auth_cb cb, void* data);
 
-typedef const proto_ent_t** proto_ent_ptr;
-
-typedef void (*gui_chat_connect_cb)
-(proto_id chat, void* data);
+typedef void (*gui_chat_cb)(proto_id chat, void* data);
 
 typedef void (*gui_chat_new_cb)
 (char* name, proto_id_t* ids, void* data);
@@ -63,15 +61,18 @@ typedef struct {
 		uiBox *box0, *box;
 		gui_check1_t chks; } gui;
 
-	proto_ent_ptr state;
+	proto_ent_t** state;
 	gui_chat_new_cb cb; void* data;
 } gui_chats0_t;
 
 gui_chats0_t* gui_chats0
-(proto_ent_ptr users, gui_chat_new_cb cb, void* data);
+(proto_ent_t** users, gui_chat_new_cb cb, void* data);
 
 void gui_chats0_add_user
-(gui_chats0_t* chats, const proto_ent_t* ent);
+(gui_chats0_t* chats0, const proto_ent_t* ent);
+
+void gui_chats0_remove_user
+(gui_chats0_t* chats0, proto_id id);
 
 void gui_chats0_init(gui_chats0_t* chats);
 
@@ -84,24 +85,25 @@ typedef struct {
 		uiButton* new_; } gui;
 
 	struct {
-		proto_ent_ptr users;
-		proto_ent_ptr chats; } state;
+		proto_ent_t** users;
+		proto_ent1_t* chats; } state;
 
 	struct {
-		gui_chat_connect_cb do_;
+		gui_chat_cb do_, leave, del_acc;
 		gui_chat_new_cb new_;
 		void* data; } cb;
 } gui_chats_t;
 
 gui_chats_t* gui_chats(
-	proto_ent_ptr users, proto_ent_ptr chats_,
-	gui_chat_connect_cb conn_cb,
-	gui_chat_new_cb new_cb, void* data);
+	proto_ent1_t* users, proto_ent1_t* chats_,
+	gui_chat_cb conn_cb, gui_chat_new_cb new_cb,
+	gui_chat_cb leave_cb, gui_chat_cb del_acc_cb, void* data);
 
 void gui_chats_add_entry(
 	gui_chats_t* chats, bool user,
 	const proto_ent_t* ent);
 
+void gui_chats_remove_user(gui_chats_t* chats, proto_id id);
 void gui_chats_refresh(gui_chats_t* chats, bool user);
 
 #endif

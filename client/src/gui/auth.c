@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "gui.h"
 
 typedef struct {
@@ -33,11 +34,21 @@ void gui_auth_do(uiButton* _, void* data) {
 	char* passwd = uiEntryText(ctx->passwd);
 	char* name = ctx->reg ? uiEntryText(ctx->name) : NULL;
 
+	if (
+		strlen(uname) == 0 || strlen(passwd) == 0 ||
+		(name != NULL && strlen(name) == 0))
+	{
+		gui_msg_box(
+		    ctx->wnd->wnd, "chat-client",
+		    "please specify all fields!", MB_ICONERROR);
+
+		return; }
+
 	bool ok = ctx->cb(
 		ctx->wnd->wnd, uname,
 		passwd, name, ctx->data);
 
-	if (ok) gui_window_close(ctx->wnd); }
+	if (ok) gui_window_close(ctx->wnd, false); }
 
 void gui_auth_switch(uiButton* _, void* data) {
 	gui_auth_ctx_t* ctx = data;

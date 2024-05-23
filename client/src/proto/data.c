@@ -39,6 +39,6 @@ void proto_res_free(proto_res_t* res, bool move) {
 		case PROTO_RES_USER_DELETE:
 		case PROTO_RES_CHAT_USER_JOIN:
 		case PROTO_RES_CHAT_USER_LEAVE:
-			proto_id_free(res->val.ids.ids); break; }
+			proto_id_free(res->val.ids); break; }
 
 	free(res); }

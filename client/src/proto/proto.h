@@ -15,6 +15,13 @@ typedef size_t proto_time;
 	cur != NULL; \
 	free(cur##__0), cur##__0 = cur, cur = cur->next)
 
+#define LIST_FIND(list, id_, idx, var0, var) { \
+	idx = 0; var0 = var = NULL; \
+	LIST_FOREACH(list, val) { \
+		if (val->id == id_) var = val; \
+		if (val->id >= id_) break; \
+		else { idx++; var0 = val; } } }
+
 #define LIST1_PUSH(list, val) { \
 	if ((list)->vals == NULL) \
 		(list)->vals = (list)->end = val; \
@@ -22,19 +29,13 @@ typedef size_t proto_time;
 		(list)->end->next = val; \
 		(list)->end = val; } }
 
-#define LIST1_DELETE(list, id_, idx) { \
-	idx = 0; \
-	typeof((list)->vals) prev = NULL; \
-	LIST_FOREACH((list)->vals, obj) { \
-		if (obj->id > id_) break; \
-		else if (obj->id == id_) { \
-			if (obj == (list)->vals) \
-				(list)->vals = (list)->vals->next; \
-			else if (obj == (list)->end) \
-				(list)->end = prev; \
-			if (prev != NULL) prev->next = obj->next; \
-			free(obj); } \
-		else prev = obj; idx++; } }
+#define LIST1_DELETE(list, val0, val) { \
+	if (val == (list)->vals) \
+		(list)->vals = (list)->vals->next; \
+	if (val == (list)->end) \
+		(list)->end = val0; \
+	if (val0 != NULL) val0->next = val->next; \
+	free(val); }
 
 typedef struct proto_ent_t {
 	struct proto_ent_t* next;
@@ -114,11 +115,7 @@ typedef struct {
 	union {
 		proto_ent_t* ent;
 		proto_msg_t* msg;
-
-		struct {
-			proto_id_t* ids;
-			proto_id tgt; } ids;
-	} val;
+		proto_id_t* ids; } val;
 } proto_res_t;
 
 // this consumes the `json` arg
