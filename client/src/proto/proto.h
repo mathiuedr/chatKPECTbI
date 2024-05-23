@@ -20,6 +20,7 @@
 		(list)->end = val; } }
 
 #define LIST1_DELETE(list, id_) { \
+	size_t idx = 0; \
 	typeof((list)->vals) prev = NULL; \
 	LIST_FOREACH((list)->vals, obj) { \
 		if (obj->id > id_) break; \
@@ -30,7 +31,8 @@
 				(list)->end = prev; \
 			if (prev != NULL) prev->next = obj->next; \
 			free(obj); } \
-		else prev = obj; } }
+		else prev = obj; idx++; } \
+	idx; }
 
 typedef size_t proto_id;
 typedef size_t proto_time;

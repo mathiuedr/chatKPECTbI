@@ -2,12 +2,6 @@
 #include <stdlib.h>
 #include "gui.h"
 
-void gui_chats0_add_user
-(gui_chats_t* chats, const proto_ent_t* ent);
-
-void gui_chats0_init(gui_chats_t* chats);
-void gui_chats0(uiButton* _, void* data);
-
 void gui_chats_do(uiButton* _, void* data) {
 	gui_chats_t* chats = data;
 	ssize_t idx = uiComboboxSelected(chats->ui.chats);
@@ -43,7 +37,8 @@ gui_chats_t* gui_chats(
 	chats->data = data;
 
 	uiGroup* grp = uiNewGroup("select a chat");
-	uiBox* box = uiNewVerticalBox();
+	uiBox *box = uiNewVerticalBox(),
+	      *inner = uiNewVerticalBox();
 
 	chats->ui.chats = uiNewCombobox();
 	gui_chats_init(chats);
@@ -51,16 +46,18 @@ gui_chats_t* gui_chats(
 	uiButton* do_ = uiNewButton("connect!");
 	chats->ui.new_ = uiNewButton("new chat...");
 
-	chats->wnd = gui_window_new(
-		"chat-client: chats", uiControl(grp), free, chats);
-
-	uiGroupSetMargined(grp, true);
-	uiGroupSetChild(grp, uiControl(box));
+	chats->wnd = gui_window_new(uiControl(box), free, chats);
 
 	uiBoxSetPadded(box, true);
-	uiBoxAppend(box, uiControl(chats->ui.chats), false);
-	uiBoxAppend(box, uiControl(do_), false);
+	uiBoxAppend(box, uiControl(grp), true);
 	uiBoxAppend(box, uiControl(chats->ui.new_), false);
+	
+	uiGroupSetMargined(grp, true);
+	uiGroupSetChild(grp, uiControl(inner));
+
+	uiBoxSetPadded(inner, true);
+	uiBoxAppend(inner, uiControl(chats->ui.chats), false);
+	uiBoxAppend(inner, uiControl(do_), false);
 
 	uiButtonOnClicked(do_, gui_chats_do, chats);
 	uiButtonOnClicked(chats->ui.new_, gui_chats0, chats);

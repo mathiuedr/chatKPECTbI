@@ -1,7 +1,6 @@
 #include "proto.h"
 
-void proto_id_free(proto_id_t* ids) {
-	LIST_FREE(ids, _) {} }
+void proto_id_free(proto_id_t* ids) { LIST_FREE(ids, _) {} }
 
 json_t* proto_id_json(proto_id_t* ids) {
 	json_t* ids1 = cJSON_CreateArray();
@@ -34,31 +33,27 @@ json_t* proto_req_new(proto_req_kind kind) {
 	cJSON_AddNumberToObject(req, "ty", (double)kind);
 	return req; }
 
-json_t* proto_get_users() {
-	return proto_req_new(PROTO_GET_USERS); }
-
-json_t* proto_get_chats() {
-	return proto_req_new(PROTO_GET_CHATS); }
+json_t* proto_get_users() { return proto_req_new(PROTO_GET_USERS); }
+json_t* proto_get_chats() { return proto_req_new(PROTO_GET_CHATS); }
 
 json_t* proto_chat_connect(proto_id chat) {
 	json_t* req = proto_req_new(PROTO_CHAT_SEND);
 	cJSON_AddNumberToObject(req, "to", (double)chat);
 	return req; }
 
-json_t* proto_chat_disconnect() {
-	return proto_req_new(PROTO_CHAT_DISCONNECT); }
+json_t* proto_chat_disconnect() { return proto_req_new(PROTO_CHAT_DISCONNECT); }
 
 // this consumes the `users` arg
-json_t* proto_chat_new(const char* name, proto_ids_t* users) {
+json_t* proto_chat_new(const char* name, proto_id_t* users) {
 	json_t* req = proto_req_new(PROTO_CHAT_SEND);
 	cJSON_AddStringToObject(req, "chatName", name);
-	cJSON_AddItemToObject(req, "Invited", proto_ids_json(users));
+	cJSON_AddItemToObject(req, "Invited", proto_id_json(users));
 	return req; }
 
 // this consumes the `users` arg
-json_t* proto_chat_invite(proto_id chat, proto_ids_t* users) {
+json_t* proto_chat_invite(proto_id chat, proto_id_t* users) {
 	json_t* req = proto_req_new(PROTO_CHAT_SEND);
-	cJSON_AddItemToObject(req, "Invited", proto_ids_json(users));
+	cJSON_AddItemToObject(req, "Invited", proto_id_json(users));
 	return req; }
 
 json_t* proto_chat_leave(proto_id chat) {
@@ -66,16 +61,12 @@ json_t* proto_chat_leave(proto_id chat) {
 	cJSON_AddNumberToObject(req, "chatId", (double)chat);
 	return req; }
 
-json_t* proto_chat_get_users() {
-	return proto_req_new(PROTO_CHAT_GET_USERS); }
-
-json_t* proto_chat_get_msgs() {
-	return proto_req_new(PROTO_CHAT_GET_MSGS); }
+json_t* proto_chat_get_users() { return proto_req_new(PROTO_CHAT_GET_USERS); }
+json_t* proto_chat_get_msgs() { return proto_req_new(PROTO_CHAT_GET_MSGS); }
 
 json_t* proto_chat_send(const char* msg) {
 	json_t* req = proto_req_new(PROTO_CHAT_SEND);
 	cJSON_AddStringToObject(req, "msg", msg);
 	return req; }
 
-json_t* proto_delete_account() {
-	return proto_req_new(PROTO_DELETE_ACCOUNT); }
+json_t* proto_delete_account() { return proto_req_new(PROTO_DELETE_ACCOUNT); }

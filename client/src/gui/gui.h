@@ -33,11 +33,9 @@ void gui_quit_cb(void* data);
 void gui_run(); void gui_free_str(char* str);
 
 void gui_check_free(gui_check_t* chk);
-void gui_check_delete(gui_check1_t* chks, proto_id id);
 
-gui_window_t* gui_window_new(
-	const char* title, gui_ctrl* ctrl,
-	gui_close_cb close_cb, void* data);
+gui_window_t* gui_window_new
+(gui_ctrl* ctrl, gui_close_cb close_cb, void* data);
 
 void gui_window_init
 (gui_window_t* wnd, gui_close_cb exit_cb, void* data);
@@ -92,5 +90,13 @@ void gui_chats_add_entry(
 	const proto_ent_t* entry);
 
 void gui_chats_refresh(gui_chats_t* chats, bool user);
+
+// chats.0.c
+
+void gui_chats0_add_user
+(gui_chats_t* chats, const proto_ent_t* ent);
+
+void gui_chats0_init(gui_chats_t* chats);
+void gui_chats0(uiButton* _, void* data);
 
 #endif

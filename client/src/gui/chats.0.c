@@ -14,9 +14,7 @@ void gui_chats0_do(uiButton* _, void* data) {
 			id1->id = chk->id; LIST1_PUSH(&ids, id1); }
 
 	chats->new_(name, ids.vals, chats->data);
-
-	gui_window_close(chats->wnd1);
-	gui_window_close(chats->wnd); }
+	gui_window_close(chats->wnd1); }
 
 void gui_chats0_add_user
 (gui_chats_t* chats, const proto_ent_t* ent) {
@@ -59,7 +57,9 @@ void gui_chats0(uiButton* _, void* data) {
 	uiControlDisable(uiControl(chats->ui.new_));
 
 	uiGroup* grp = uiNewGroup("invite users");
-	uiBox *box = uiNewVerticalBox();
+	uiBox *box = uiNewVerticalBox(),
+	      *inner = uiNewVerticalBox();
+
 	uiForm *form = uiNewForm();
 
 	chats->title = uiNewEntry();
@@ -67,22 +67,24 @@ void gui_chats0(uiButton* _, void* data) {
 
 	uiButton* do_ = uiNewButton("new chat!");
 	chats->wnd1 = gui_window_new(
-		"chat-client: new chat", uiControl(grp),
-		gui_chats0_free, chats);
+		uiControl(box), gui_chats0_free, chats);
 
+	uiBoxSetPadded(box, true);
+	uiBoxAppend(box, uiControl(form), false);
+	uiBoxAppend(box, uiControl(grp), true);
+	
 	uiGroupSetMargined(grp, true);
-	uiGroupSetChild(grp, uiControl(box));
+	uiGroupSetChild(grp, uiControl(inner));
 
 	uiFormSetPadded(form, true);
 	uiFormAppend(form, "title", uiControl(chats->title), false);
 	
-	uiBoxSetPadded(box, true);
-	uiBoxAppend(box, uiControl(form), true);
-	uiBoxAppend(box, uiControl(chats->ui.users.box0), true);
-	uiBoxAppend(box, uiControl(do_), false);
+	uiBoxSetPadded(inner, true);
+	uiBoxAppend(inner, uiControl(chats->ui.users.box0), true);
+	uiBoxAppend(inner, uiControl(do_), false);
 
 	gui_chats0_init(chats);
-
-	uiButtonOnClicked(do_, gui_chats0_do, chats);
 	
+	uiButtonOnClicked(do_, gui_chats0_do, chats);
+
 	gui_window_init(chats->wnd1, NULL, NULL); }

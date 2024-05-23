@@ -50,12 +50,13 @@ gui_window_t* gui_auth(gui_auth_cb cb, void* data) {
 	gui_auth_ctx_t* ctx = calloc(1, sizeof(gui_auth_ctx_t));
 	ctx->cb = cb; ctx->data = data;
 
+	uiBox *box = uiNewVerticalBox(),
+	      *inner = uiNewVerticalBox();
+
 	ctx->grp = uiNewGroup("...");
-	uiBox* box = uiNewVerticalBox();
 	uiForm* form = uiNewForm();
 
-	ctx->wnd = gui_window_new(
-		"chat-client: auth", uiControl(ctx->grp), free, ctx);
+	ctx->wnd = gui_window_new(uiControl(box), free, ctx);
 
 	ctx->uname = uiNewEntry();
 	ctx->passwd = uiNewPasswordEntry();
@@ -63,14 +64,17 @@ gui_window_t* gui_auth(gui_auth_cb cb, void* data) {
 
 	ctx->do_ = uiNewButton("...");
 	ctx->switch_ = uiNewButton("...");
-
-	uiGroupSetMargined(ctx->grp, true);
-	uiGroupSetChild(ctx->grp, uiControl(box));
 	
 	uiBoxSetPadded(box, true);
-	uiBoxAppend(box, uiControl(form), true);
-	uiBoxAppend(box, uiControl(ctx->do_), false);
+	uiBoxAppend(box, uiControl(ctx->grp), true);
 	uiBoxAppend(box, uiControl(ctx->switch_), false);
+	
+	uiGroupSetMargined(ctx->grp, true);
+	uiGroupSetChild(ctx->grp, uiControl(inner));
+
+	uiBoxSetPadded(inner, true);
+	uiBoxAppend(inner, uiControl(form), true);
+	uiBoxAppend(inner, uiControl(ctx->do_), false);
 	
 	uiFormSetPadded(form, true);
 	uiFormAppend(form, "username", uiControl(ctx->uname), false);

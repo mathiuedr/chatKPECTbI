@@ -20,14 +20,12 @@ int gui_window_on_close(gui_window* _, void* data) {
 
 	free(wnd); return true; }
 
-gui_window_t* gui_window_new(
-	const char* title, gui_ctrl* ctrl,
-	gui_close_cb close_cb, void* data)
-{
+gui_window_t* gui_window_new
+(gui_ctrl* ctrl, gui_close_cb close_cb, void* data) {
 	gui_window_t* wnd = calloc(1, sizeof(gui_window_t));
 	wnd->close.fn = close_cb; wnd->close.data = data;
 
-	gui_window* wnd0 = uiNewWindow(title, 0, 0, false);
+	gui_window* wnd0 = uiNewWindow("chat-client", 0, 0, false);
 	uiWindowSetChild(wnd0, ctrl);
 	uiWindowSetMargined(wnd0, true);
 

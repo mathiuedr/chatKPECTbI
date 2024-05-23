@@ -9,12 +9,12 @@
 		LIST1_PUSH(&objs, obj); } }
 
 char* proto_string_extract(json_t* json, const char* key) {
-	json_t* tgt = cJSON_DetachItemFromObject(json, key);
+	json_t* tgt = cJSON_GetObjectItem(json, key);
 	if (tgt == NULL) return NULL;
 	
 	tgt->type |= cJSON_IsReference;
 	char* str = cJSON_GetStringValue(tgt);
-	cJSON_Delete(tgt); return str; }
+	return str; }
 
 proto_msg_t* proto_msg_parse0(json_t* json) {
 	proto_msg_t* msg = calloc(1, sizeof(proto_msg_t));

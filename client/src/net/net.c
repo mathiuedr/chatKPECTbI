@@ -79,9 +79,8 @@ bool net_recv_frame(net_sesn_t* sesn, net_frame_t* frm) {
 
 bool net_send_pong(net_sesn_t* sesn) {
 	size_t _sent;
-	CURLcode err = net_send_block(
-		sesn, NULL, 0, &_sent, 0, CURLWS_PONG);
-	return err != 0; }
+	return net_send_block(
+		sesn, NULL, 0, &_sent, 0, CURLWS_PONG); }
 
 json_t* net_recv_json(net_sesn_t* sesn) {
 	net_frame_t frm; bool recv_ok = false;
@@ -101,8 +100,8 @@ json_t* net_recv_json(net_sesn_t* sesn) {
 // this consumes the `obj` arg
 bool net_send_json(net_sesn_t* sesn, json_t* obj) {
 	size_t _sent;
-	char* str = cJSON_Print(obj); cJSON_Delete(obj);
-	CURLcode err = net_send_block(
+	char* str = cJSON_PrintUnformatted(obj);
+	bool ok = net_send_block(
 		sesn, str, strlen(str), &_sent, 0, CURLWS_TEXT);
 
-	free(str); return err != 0; }
+	cJSON_Delete(obj); free(str); return ok; }
