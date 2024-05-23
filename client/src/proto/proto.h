@@ -13,8 +13,11 @@
 	free(cur##__0), cur##__0 = cur, cur = cur->next)
 
 #define LIST1_PUSH(list, val) { \
-	if ((list)->vals == NULL) (list)->vals = val; \
-	(list)->end->next = val; (list)->end = val; }
+	if ((list)->vals == NULL) \
+		(list)->vals = (list)->end = val; \
+	else { \
+		(list)->end->next = val; \
+		(list)->end = val; } }
 
 typedef size_t proto_id;
 typedef size_t proto_time;
@@ -94,6 +97,6 @@ typedef struct {
 
 // this consumes the `json` arg
 proto_res_t* proto_res_parse(json_t* json);
-void proto_res_free(proto_res_t* res);
+void proto_res_free(proto_res_t* res, bool move);
 
 #endif

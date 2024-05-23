@@ -13,7 +13,8 @@ typedef struct gui_check_t {
 	uiCheckbox* chk; } gui_check_t;
 
 typedef struct {
-	uiBox* box; gui_check_t* vals;
+	uiBox *box0, *box;
+	gui_check_t* vals;
 	gui_check_t* end; } gui_check1_t;
 
 typedef uiWindow gui_window;
@@ -32,57 +33,60 @@ void gui_run(); void gui_free_str(char* str);
 void gui_check_free(gui_check_t* chk);
 
 gui_window_t* gui_window_new(
-    const char* title, gui_ctrl* ctrl,
-    gui_close_cb close0_cb, void* data0);
+	const char* title, gui_ctrl* ctrl,
+	gui_close_cb close0_cb, void* data0);
 
 void gui_window_init(
 	gui_window_t* wnd, gui_close_cb close_cb,
 	void* data, bool exit);
 
-void gui_window_close(gui_window_t* wnd);
+void gui_window_close(gui_window_t* wnd, bool exit);
 
 void gui_msg_box(
 	gui_window* wnd, const char* title,
 	const char* msg, uint32_t flags);
 
-// login.c
+// auth.c
 
-typedef bool (*gui_login_cb)(
-	gui_window* wnd, bool reg,
-	char* uname, char* passwd,
-	char* name, void* data);
+typedef bool (*gui_auth_cb)(
+	gui_window* wnd, char* uname,
+	char* passwd, char* name, void* data);
 
-gui_window_t* gui_login(gui_login_cb cb, void* data);
+gui_window_t* gui_auth(gui_auth_cb cb, void* data);
 
 // chats.c
 
-typedef bool (*gui_chat_connect_cb)
+typedef void (*gui_chat_connect_cb)
 (proto_id chat, void* data);
 
-typedef bool (*gui_chat_new_cb)
+typedef void (*gui_chat_new_cb)
 (char* name, proto_ids_t* ids, void* data);
+
+typedef const proto_ent_t** proto_ent_ptr;
 
 typedef struct {
 	gui_window_t *wnd, *wnd1;
 	struct {
-		uiCombobox* chats;
+		uiCombobox* chats; uiButton* new_;
 		gui_check1_t users; } ui;
 
 	struct {
-		proto_ent1_t chats;
-		proto_ent1_t users; } state;
+		proto_ent_ptr users;
+		proto_ent_ptr chats; } state;
 
-	gui_chat_connect_cb conn;
+	gui_chat_connect_cb do_;
 	gui_chat_new_cb new_; void* data;
 } gui_chats_t;
 
 gui_chats_t* gui_chats(
+	proto_ent_ptr users, proto_ent_ptr chats_,
 	gui_chat_connect_cb conn_cb,
 	gui_chat_new_cb new_cb, void* data);
 
-// this consumes the `name` arg
 void gui_chats_add_entry(
-    gui_chats_t* chats, bool user,
-	char* name, proto_id id);
+	gui_chats_t* chats, bool user,
+	const proto_ent_t* entry);
+
+void gui_chats_refresh(gui_chats_t* chats, bool user);
 
 #endif

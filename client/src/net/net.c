@@ -20,8 +20,7 @@ bool net_make_fd_set(net_sesn_t* sesn, fd_set* fds) {
 		sesn, CURLINFO_ACTIVESOCKET, &sock);
 	if (err != CURLE_OK) return false;
 
-	FD_ZERO(&fds); FD_SET(sock, &fds);
-	return true; }
+	FD_ZERO(fds); FD_SET(sock, fds); return true; }
 
 bool net_recv_block(
 	net_sesn_t* sesn, char* buf, size_t len,

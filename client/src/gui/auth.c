@@ -7,10 +7,10 @@ typedef struct {
 	uiGroup* grp; uiButton *do_, *switch_;
 
 	uiEntry *uname, *passwd, *name;
-	gui_login_cb cb; void* data;
-} gui_login_ctx_t;
+	gui_auth_cb cb; void* data;
+} gui_auth_ctx_t;
 
-void gui_login_ctx_login(gui_login_ctx_t* ctx) {
+void gui_auth_ctx_login(gui_auth_ctx_t* ctx) {
 	uiGroupSetTitle(ctx->grp, "login");
 
 	uiButtonSetText(ctx->do_, "login!");
@@ -18,7 +18,7 @@ void gui_login_ctx_login(gui_login_ctx_t* ctx) {
 
 	uiControlHide(uiControl(ctx->name)); }
 
-void gui_login_ctx_register(gui_login_ctx_t* ctx) {
+void gui_auth_ctx_register(gui_auth_ctx_t* ctx) {
 	uiGroupSetTitle(ctx->grp, "register");
 
 	uiButtonSetText(ctx->do_, "register!");
@@ -26,28 +26,30 @@ void gui_login_ctx_register(gui_login_ctx_t* ctx) {
 
 	uiControlShow(uiControl(ctx->name)); }
 
-void gui_login_do(uiButton* _, void* data) {
-	gui_login_ctx_t* ctx = data;
+void gui_auth_do(uiButton* _, void* data) {
+	gui_auth_ctx_t* ctx = data;
 
 	char* uname = uiEntryText(ctx->uname);
 	char* passwd = uiEntryText(ctx->passwd);
 	char* name = ctx->reg ? uiEntryText(ctx->name) : NULL;
 
 	bool ok = ctx->cb(
-	    ctx->wnd->wnd, ctx->reg,
-	    uname, passwd, name, ctx->data);
+		ctx->wnd->wnd, uname,
+		passwd, name, ctx->data);
 
-	if (ok) { gui_window_close(ctx->wnd); free(ctx); } }
+	if (ok) {
+		gui_window_close(ctx->wnd, false);
+		free(ctx); } }
 
-void gui_login_switch(uiButton* _, void* data) {
-	gui_login_ctx_t* ctx = data;
+void gui_auth_switch(uiButton* _, void* data) {
+	gui_auth_ctx_t* ctx = data;
 	ctx->reg = !ctx->reg;
 
-	if (!ctx->reg) gui_login_ctx_login(ctx);
-	else gui_login_ctx_register(ctx); }
+	if (!ctx->reg) gui_auth_ctx_login(ctx);
+	else gui_auth_ctx_register(ctx); }
 
-gui_window_t* gui_login(gui_login_cb cb, void* data) {
-	gui_login_ctx_t* ctx = calloc(1, sizeof(gui_login_ctx_t));
+gui_window_t* gui_auth(gui_auth_cb cb, void* data) {
+	gui_auth_ctx_t* ctx = calloc(1, sizeof(gui_auth_ctx_t));
 	ctx->cb = cb; ctx->data = data;
 
 	ctx->grp = uiNewGroup("...");
@@ -55,7 +57,7 @@ gui_window_t* gui_login(gui_login_cb cb, void* data) {
 	uiForm* form = uiNewForm();
 
 	ctx->wnd = gui_window_new(
-		"chat-client: auth", uiControl(ctx->grp), free, ctx);
+		"chat-client: auth", uiControl(ctx->grp), NULL, ctx);
 
 	ctx->uname = uiNewEntry();
 	ctx->passwd = uiNewPasswordEntry();
@@ -77,7 +79,7 @@ gui_window_t* gui_login(gui_login_cb cb, void* data) {
 	uiFormAppend(form, "password", uiControl(ctx->passwd), false);
 	uiFormAppend(form, "name", uiControl(ctx->name), false);
 
-	uiButtonOnClicked(ctx->do_, gui_login_do, ctx);
-	uiButtonOnClicked(ctx->switch_, gui_login_switch, ctx);
+	uiButtonOnClicked(ctx->do_, gui_auth_do, ctx);
+	uiButtonOnClicked(ctx->switch_, gui_auth_switch, ctx);
 
-	gui_login_ctx_login(ctx); return ctx->wnd; }
+	gui_auth_ctx_login(ctx); return ctx->wnd; }

@@ -91,17 +91,19 @@ proto_res_t* proto_res_parse(json_t* json) {
 
 	cJSON_Delete(json); return res; }
 
-void proto_res_free(proto_res_t* res) {
+void proto_res_free(proto_res_t* res, bool move) {
 	switch (res->kind) {
 		case PROTO_RES_USERS:
 		case PROTO_RES_NEW_USER:
 		case PROTO_RES_CHATS:
 		case PROTO_RES_CHAT_USERS:
 		case PROTO_RES_NEW_CHAT:
-			proto_ent_free(res->val.ent); break;
+			if (!move) proto_ent_free(res->val.ent);
+			break;
 
 		case PROTO_RES_MSGS:
 		case PROTO_RES_NEW_MSG:
-			proto_msg_free(res->val.msg); break; }
+			if (!move) proto_msg_free(res->val.msg);
+			break; }
 
 	free(res); }
