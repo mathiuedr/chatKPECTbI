@@ -41,10 +41,7 @@ bool app_on_login(
 	if (name != NULL) gui_free_str(name);
 
 	if (sesn == NULL) {
-		MessageBoxA(
-			(HWND)uiControlHandle(uiControl(wnd)),
-			"login failed!", "chat-client", MB_ICONERROR);
-
+		gui_msg_box(wnd, "chat-client", "auth failed!", MB_ICONERROR);
 		return false; }
 
 	app_t* app = calloc(1, sizeof(app_t));
@@ -58,7 +55,7 @@ bool app_on_login(
 
 void app_init() { gui_init(); net_init(); }
 void app_run() {
-	gui_window* wnd = gui_login(app_on_login, NULL);
+	gui_window_t* wnd = gui_login(app_on_login, NULL);
 	gui_window_init(wnd, NULL, NULL, true);
 	gui_run(); }
 

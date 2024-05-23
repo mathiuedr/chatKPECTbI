@@ -1,39 +1,47 @@
 #include <stdlib.h>
 #include "gui.h"
 
-typedef struct {
-	bool exit;
-	gui_close_cb cb; void* data;
-} gui_window_ctx_t;
-
 bool gui_init() {
 	uiInitOptions opts = { 0 };
 	return uiInit(&opts) == NULL; }
 
 void gui_cleanup() { uiUninit(); }
-
 void gui_run() { uiMain(); }
 
-int gui_window_on_close(gui_window* wnd, void* data) {
-	gui_window_ctx_t* ctx = data;
-	if (ctx->cb != NULL) ctx->cb(ctx->data);
-
-	uiControlDestroy(uiControl(wnd));
-	if (ctx->exit) uiQuit();
-	free(ctx); return true; }
-
-gui_window* gui_window_new(const char* title, gui_ctrl* ctrl) {
-	gui_window* wnd = uiNewWindow(title, 0, 0, false);
-	uiWindowSetChild(wnd, ctrl);
-	uiWindowSetMargined(wnd, true);
-	return wnd; }
-
-void gui_window_init
-(gui_window* wnd, gui_close_cb close_cb, void* data, bool exit) {
-	gui_window_ctx_t* ctx = calloc(1, sizeof(gui_window_ctx_t));
-	ctx->cb = close_cb; ctx->data = data; ctx->exit = exit;
-
-	uiWindowOnClosing(wnd, gui_window_on_close, ctx);
-	uiControlShow(uiControl(wnd)); }
-
 void gui_free_str(char* str) { uiFreeText(str); }
+void gui_check_free(gui_check_t* chk) { LIST_FREE(chk, _) {} }
+
+int gui_window_on_close(gui_window* _, void* data) {
+	gui_window_t* wnd = data;
+
+	if (wnd->cb0 != NULL) wnd->cb0(wnd->data0);
+	if (wnd->cb != NULL) wnd->cb(wnd->data);
+
+	gui_window_close(wnd); return true; }
+
+gui_window_t* gui_window_new(
+    const char* title, gui_ctrl* ctrl,
+    gui_close_cb close0_cb, void* data0)
+{
+	gui_window_t* wnd = calloc(1, sizeof(gui_window_t));
+	wnd->cb0 = close0_cb; wnd->data0 = data0;
+
+	gui_window* wnd0 = uiNewWindow(title, 0, 0, false);
+	uiWindowSetChild(wnd0, ctrl);
+	uiWindowSetMargined(wnd0, true);
+
+	wnd->wnd = wnd0; return wnd; }
+
+void gui_window_init(
+    gui_window_t* wnd, gui_close_cb close_cb,
+    void* data, bool exit)
+{
+	wnd->cb = close_cb; wnd->data = data; wnd->exit = exit;
+	uiWindowOnClosing(wnd->wnd, gui_window_on_close, wnd);
+	uiControlShow(uiControl(wnd->wnd)); }
+
+void gui_window_close(gui_window_t* wnd) {
+	if (!wnd->exit)
+		uiControlDestroy(uiControl(wnd->wnd));
+	else uiQuit();
+	free(wnd); }

@@ -3,15 +3,15 @@
 #include "gui.h"
 
 typedef struct {
-	gui_window* wnd; bool reg;
-	uiGroup* group; uiButton *do_, *switch_;
+	gui_window_t* wnd; bool reg;
+	uiGroup* grp; uiButton *do_, *switch_;
 
 	uiEntry *uname, *passwd, *name;
 	gui_login_cb cb; void* data;
 } gui_login_ctx_t;
 
 void gui_login_ctx_login(gui_login_ctx_t* ctx) {
-	uiGroupSetTitle(ctx->group, "login");
+	uiGroupSetTitle(ctx->grp, "login");
 
 	uiButtonSetText(ctx->do_, "login!");
 	uiButtonSetText(ctx->switch_, "register...");
@@ -19,7 +19,7 @@ void gui_login_ctx_login(gui_login_ctx_t* ctx) {
 	uiControlHide(uiControl(ctx->name)); }
 
 void gui_login_ctx_register(gui_login_ctx_t* ctx) {
-	uiGroupSetTitle(ctx->group, "register");
+	uiGroupSetTitle(ctx->grp, "register");
 
 	uiButtonSetText(ctx->do_, "register!");
 	uiButtonSetText(ctx->switch_, "login...");
@@ -34,12 +34,10 @@ void gui_login_do(uiButton* _, void* data) {
 	char* name = ctx->reg ? uiEntryText(ctx->name) : NULL;
 
 	bool ok = ctx->cb(
-	    ctx->wnd, ctx->reg,
+	    ctx->wnd->wnd, ctx->reg,
 	    uname, passwd, name, ctx->data);
 
-	if (ok) {
-		uiControlDestroy(uiControl(ctx->wnd));
-		free(ctx); } }
+	if (ok) { gui_window_close(ctx->wnd); free(ctx); } }
 
 void gui_login_switch(uiButton* _, void* data) {
 	gui_login_ctx_t* ctx = data;
@@ -48,16 +46,16 @@ void gui_login_switch(uiButton* _, void* data) {
 	if (!ctx->reg) gui_login_ctx_login(ctx);
 	else gui_login_ctx_register(ctx); }
 
-gui_window* gui_login(gui_login_cb cb, void* data) {
+gui_window_t* gui_login(gui_login_cb cb, void* data) {
 	gui_login_ctx_t* ctx = calloc(1, sizeof(gui_login_ctx_t));
 	ctx->cb = cb; ctx->data = data;
 
-	ctx->group = uiNewGroup("...");
+	ctx->grp = uiNewGroup("...");
 	uiBox* box = uiNewVerticalBox();
 	uiForm* form = uiNewForm();
 
 	ctx->wnd = gui_window_new(
-		"chat-client: auth", uiControl(ctx->group));
+		"chat-client: auth", uiControl(ctx->grp), free, ctx);
 
 	ctx->uname = uiNewEntry();
 	ctx->passwd = uiNewPasswordEntry();
@@ -66,8 +64,8 @@ gui_window* gui_login(gui_login_cb cb, void* data) {
 	ctx->do_ = uiNewButton("...");
 	ctx->switch_ = uiNewButton("...");
 
-	uiGroupSetMargined(ctx->group, true);
-	uiGroupSetChild(ctx->group, uiControl(box));
+	uiGroupSetMargined(ctx->grp, true);
+	uiGroupSetChild(ctx->grp, uiControl(box));
 	
 	uiBoxSetPadded(box, true);
 	uiBoxAppend(box, uiControl(form), true);
