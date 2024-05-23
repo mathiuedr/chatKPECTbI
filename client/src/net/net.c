@@ -10,6 +10,7 @@ typedef struct {
 } net_frame_t;
 
 void net_frame_free(net_frame_t* frm) { free(frm->buf); }
+
 bool net_init() {
 	return curl_global_init(CURL_GLOBAL_ALL) == CURLE_OK; }
 
@@ -23,38 +24,30 @@ bool net_make_fd_set(net_sesn_t* sesn, fd_set* fds) {
 
 	FD_ZERO(fds); FD_SET(sock, fds); return true; }
 
+#define NET_OP_BLOCK(op, read, write, ...) { \
+	CURLcode err = op(__VA_ARGS__); \
+	if (err == CURLE_AGAIN) { \
+		fd_set fds; net_make_fd_set(sesn, &fds); \
+		if (select(0, read, write, NULL, &_250MS) != 1) \
+			return false; \
+		err = op(__VA_ARGS__); } \
+	return err == CURLE_OK; }
+
 bool net_recv_block(
 	net_sesn_t* sesn, char* buf, size_t len,
 	size_t* recv, const net_frame0_t** frame)
 {
-	CURLcode err = curl_ws_recv(sesn, buf, len, recv, frame);
-	if (err == CURLE_AGAIN) {
-		fd_set fds; net_make_fd_set(sesn, &fds);
-		if (select(0, &fds, NULL, NULL, &_250MS) != 1)
-			return false;
-
-		err = curl_ws_recv(sesn, buf, len, recv, frame); }
-
-	return err == CURLE_OK; }
+	NET_OP_BLOCK(
+		curl_ws_recv, &fds, NULL,
+		sesn, buf, len, recv, frame); }
 
 bool net_send_block(
 	net_sesn_t* sesn, const char* buf, size_t len,
 	size_t* sent, size_t frag, uint32_t flags)
 {
-	CURLcode err = curl_ws_send(sesn, buf, len, sent, frag, flags);
-	if (err == CURLE_AGAIN) {
-		fd_set fds; net_make_fd_set(sesn, &fds);
-		if (select(0, NULL, &fds, NULL, &_250MS) != 1)
-			return false;
-
-		err = curl_ws_send(sesn, buf, len, sent, frag, flags); }
-
-	return err == CURLE_OK; }
-
-void net_close(net_sesn_t* sesn) {
-	size_t _sent;
-	net_send_block(sesn, NULL, 0, &_sent, 0, CURLWS_CLOSE);
-	curl_easy_cleanup(sesn); }
+	NET_OP_BLOCK(
+		curl_ws_send, NULL, &fds,
+		sesn, buf, len, sent, frag, flags); }
 
 bool net_recv_frame(net_sesn_t* sesn, net_frame_t* frm) {
 	size_t len = 256, idx = 0, recv;
@@ -79,8 +72,12 @@ bool net_recv_frame(net_sesn_t* sesn, net_frame_t* frm) {
 
 bool net_send_pong(net_sesn_t* sesn) {
 	size_t _sent;
-	return net_send_block(
-		sesn, NULL, 0, &_sent, 0, CURLWS_PONG); }
+	return net_send_block(sesn, NULL, 0, &_sent, 0, CURLWS_PONG); }
+
+void net_close(net_sesn_t* sesn) {
+	size_t _sent;
+	net_send_block(sesn, NULL, 0, &_sent, 0, CURLWS_CLOSE);
+	curl_easy_cleanup(sesn); }
 
 json_t* net_recv_json(net_sesn_t* sesn) {
 	net_frame_t frm; bool recv_ok = false;
@@ -92,7 +89,6 @@ json_t* net_recv_json(net_sesn_t* sesn) {
 
 	if (recv_ok) {
 		json_t* obj = cJSON_ParseWithLength(frm.buf, frm.len);
-
 		net_frame_free(&frm);
 		return !cJSON_IsInvalid(obj) ? obj : NULL;
 	} else return NULL; }

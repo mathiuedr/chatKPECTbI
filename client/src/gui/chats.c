@@ -4,7 +4,7 @@
 
 void gui_chats_do(uiButton* _, void* data) {
 	gui_chats_t* chats = data;
-	ssize_t idx = uiComboboxSelected(chats->ui.chats);
+	ssize_t idx = uiComboboxSelected(chats->gui.chats);
 
 	if (idx == -1) {
 		gui_msg_box(
@@ -16,13 +16,28 @@ void gui_chats_do(uiButton* _, void* data) {
 	const proto_ent_t* ent = *chats->state.chats;
 	while (idx > 0) { ent = ent->next; idx--; }
 
-	chats->do_(ent->id, chats->data);
+	chats->cb.do_(ent->id, chats->cb.data);
 	gui_window_close(chats->wnd); }
 
+void gui_chats_free0(void* data) {
+	gui_chats_t* chats = data; chats->child = NULL;
+	uiControlEnable(uiControl(chats->gui.new_)); }
+
+void gui_chats_new(uiButton* _, void* data) {
+	gui_chats_t* chats = data;
+	uiControlDisable(uiControl(chats->gui.new_));
+	
+	chats->child = gui_chats0(
+		chats->state.users,
+		chats->cb.new_, chats->cb.data);
+
+	gui_window_init(
+		chats->child->wnd, gui_chats_free0, chats); }
+
 void gui_chats_init(gui_chats_t* chats) {
-	uiComboboxClear(chats->ui.chats);
+	uiComboboxClear(chats->gui.chats);
 	LIST_FOREACH(*chats->state.chats, chat)
-		uiComboboxAppend(chats->ui.chats, chat->name); }
+		uiComboboxAppend(chats->gui.chats, chat->name); }
 
 gui_chats_t* gui_chats(
 	proto_ent_ptr users, proto_ent_ptr chats_,
@@ -33,44 +48,42 @@ gui_chats_t* gui_chats(
 	chats->state.users = users;
 	chats->state.chats = chats_;
 
-	chats->do_ = conn_cb; chats->new_ = new_cb;
-	chats->data = data;
+	chats->cb.do_ = conn_cb; chats->cb.new_ = new_cb;
+	chats->cb.data = data;
 
 	uiGroup* grp = uiNewGroup("select a chat");
 	uiBox *box = uiNewVerticalBox(),
-	      *inner = uiNewVerticalBox();
+		  *inner = uiNewVerticalBox();
 
-	chats->ui.chats = uiNewCombobox();
-	gui_chats_init(chats);
-
+	chats->gui.chats = uiNewCombobox();
 	uiButton* do_ = uiNewButton("connect!");
-	chats->ui.new_ = uiNewButton("new chat...");
+	chats->gui.new_ = uiNewButton("new chat...");
 
 	chats->wnd = gui_window_new(uiControl(box), free, chats);
 
 	uiBoxSetPadded(box, true);
 	uiBoxAppend(box, uiControl(grp), true);
-	uiBoxAppend(box, uiControl(chats->ui.new_), false);
+	uiBoxAppend(box, uiControl(chats->gui.new_), false);
 	
 	uiGroupSetMargined(grp, true);
 	uiGroupSetChild(grp, uiControl(inner));
 
 	uiBoxSetPadded(inner, true);
-	uiBoxAppend(inner, uiControl(chats->ui.chats), false);
+	uiBoxAppend(inner, uiControl(chats->gui.chats), false);
 	uiBoxAppend(inner, uiControl(do_), false);
 
 	uiButtonOnClicked(do_, gui_chats_do, chats);
-	uiButtonOnClicked(chats->ui.new_, gui_chats0, chats);
+	uiButtonOnClicked(chats->gui.new_, gui_chats_new, chats);
 
-	return chats; }
+	gui_chats_init(chats); return chats; }
 
-// this consumes the `name` arg
 void gui_chats_add_entry
 (gui_chats_t* chats, bool user, const proto_ent_t* entry) {
-	if (user && chats->wnd1 != NULL)
-		gui_chats0_add_user(chats, entry);
-	else uiComboboxAppend(chats->ui.chats, entry->name); }
+	if (user && chats->child != NULL)
+		gui_chats0_add_user(chats->child, entry);
+	else uiComboboxAppend(chats->gui.chats, entry->name); }
 
 void gui_chats_refresh(gui_chats_t* chats, bool user) {
-	if (user && chats->wnd1 != NULL) gui_chats0_init(chats);
+	if (user && chats->child != NULL)
+		gui_chats0_init(chats->child);
 	else gui_chats_init(chats); }

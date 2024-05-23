@@ -17,14 +17,13 @@ char* proto_string_extract(json_t* json, const char* key) {
 	return str; }
 
 proto_msg_t* proto_msg_parse0(json_t* json) {
-	proto_msg_t* msg = calloc(1, sizeof(proto_msg_t));
+	char* msg = proto_string_extract(json, "text");
+	char* uname = proto_string_extract(json, "user_name");
+	const proto_time time =
+		(proto_time)cJSON_GetNumberValue(
+			cJSON_GetObjectItem(json, "date"));
 
-	msg->msg = proto_string_extract(json, "text");
-	msg->uname = proto_string_extract(json, "user_name");
-	msg->time = cJSON_GetNumberValue(
-		cJSON_GetObjectItem(json, "date"));
-
-	return msg; }
+	return proto_msg_new(msg, uname, time); }
 
 proto_msg_t* proto_msg_parse(json_t* json) {
 	if (cJSON_IsArray(json)) {
@@ -33,21 +32,15 @@ proto_msg_t* proto_msg_parse(json_t* json) {
 		return msgs.vals; }
 	else return proto_msg_parse0(json); }
 
-void proto_msg_free(proto_msg_t* msgs) {
-	LIST_FREE(msgs, msg) {
-		free(msg->msg); free(msg->uname); } }
-
 proto_ent_t* proto_ent_parse0(bool user, json_t* json) {
-	proto_ent_t* ent = calloc(1, sizeof(proto_ent_t));
+	char* name = proto_string_extract(
+		json, user ? "user_name" : "chat_name");
 
-	ent->id = (proto_id)cJSON_GetNumberValue(
+	const proto_id id = (proto_id)cJSON_GetNumberValue(
 		cJSON_GetObjectItem(
 			json, user ? "user_id" : "chat_id"));
 
-	ent->name = proto_string_extract(
-		json, user ? "user_name" : "chat_name");
-
-	return ent; }
+	return proto_ent_new(name, id); }
 
 proto_ent_t* proto_ent_parse(bool user, json_t* json) {
 	if (cJSON_IsArray(json)) {
@@ -56,8 +49,15 @@ proto_ent_t* proto_ent_parse(bool user, json_t* json) {
 		return ents.vals; }
 	else return proto_ent_parse0(user, json); }
 
-void proto_ent_free(proto_ent_t* ents) {
-	LIST_FREE(ents, ent) free(ent->name); }
+proto_id_t* proto_id_parse0(json_t* json) {
+	return proto_id_new((proto_id)cJSON_GetNumberValue(json)); }
+
+proto_id_t* proto_id_parse(json_t* json) {
+	if (cJSON_IsArray(json)) {
+		proto_id1_t ids = {};
+		PARSE_ARRAY(json, ids, proto_id_parse0);
+		return ids.vals; }
+	else return proto_id_parse0(json); }
 
 // this consumes the `json` arg
 proto_res_t* proto_res_parse(json_t* json) {
@@ -75,35 +75,34 @@ proto_res_t* proto_res_parse(json_t* json) {
 		case PROTO_RES_CHATS:
 			res->val.ent = proto_ent_parse(
 				false, cJSON_GetObjectItem(json, "chats"));
-			break;
+			break;			
+
+		case PROTO_RES_USER_NEW:
+			res->val.ent = proto_ent_parse(true, json); break;
+		case PROTO_RES_CHAT_NEW:
+			res->val.ent = proto_ent_parse(false, json); break;
 
 		case PROTO_RES_MSGS:
 			res->val.msg = proto_msg_parse(
 				cJSON_GetObjectItem(json, "messages"));
 			break;
 
-		case PROTO_RES_NEW_USER:
-			res->val.ent = proto_ent_parse(true, json); break;
-		case PROTO_RES_NEW_CHAT:
-			res->val.ent = proto_ent_parse(false, json); break;
-		case PROTO_RES_NEW_MSG:
-			res->val.msg = proto_msg_parse(json); break; }
+		case PROTO_RES_MSG_NEW:
+			res->val.msg = proto_msg_parse(json); break;
 
-	cJSON_Delete(json); return res; }
+		case PROTO_RES_ID:
+		case PROTO_RES_USER_DELETE:
+			res->val.ids.ids = proto_id_parse0(
+				cJSON_GetObjectItem(json, "id")); break;
 
-void proto_res_free(proto_res_t* res, bool move) {
-	switch (res->kind) {
-		case PROTO_RES_USERS:
-		case PROTO_RES_NEW_USER:
-		case PROTO_RES_CHATS:
-		case PROTO_RES_CHAT_USERS:
-		case PROTO_RES_NEW_CHAT:
-			if (!move) proto_ent_free(res->val.ent);
-			break;
+		case PROTO_RES_CHAT_USER_JOIN:
+		case PROTO_RES_CHAT_USER_LEAVE:
+			res->val.ids.ids = proto_id_parse(
+				cJSON_GetObjectItem(json, "ids"));
 
-		case PROTO_RES_MSGS:
-		case PROTO_RES_NEW_MSG:
-			if (!move) proto_msg_free(res->val.msg);
+			res->val.ids.tgt = 
+				(proto_id)cJSON_GetNumberValue(
+					cJSON_GetObjectItem(json, "to"));
 			break; }
 
-	free(res); }
+	cJSON_Delete(json); return res; }

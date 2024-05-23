@@ -16,25 +16,16 @@ typedef struct {
 typedef struct {
 	net_sesn_t* sesn;
 	app_mutex_t mtx; pthread_t listen;
+	struct { gui_chats_t* chats; } gui;
 
-	bool connd;
-	union {
-		gui_chats_t* chats;
-		/* gui_chat_t* chat */ } gui;
-
-	proto_id self;
-	proto_ent1_t users, users0, chats;
+	struct {
+		proto_ent1_t users, users0, chats;
+		proto_id self; } state;
 } app_t;
 
 typedef struct {
 	app_t* app; proto_res_t* res;
 } app_msg_t;
-
-// app.c
-
-void app_init(); void app_run(); void app_cleanup();
-
-// listen.c
 
 void app_mutex_init(app_mutex_t* mtx);
 void app_mutex_lock(app_mutex_t* mtx);
@@ -42,5 +33,7 @@ void app_mutex_unlock(app_mutex_t* mtx);
 void app_mutex_free(app_mutex_t* mtx);
 
 void* app_listen(void* data);
+
+void app_init(); void app_run(); void app_cleanup();
 
 #endif

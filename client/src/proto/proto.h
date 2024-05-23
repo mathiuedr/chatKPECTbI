@@ -4,6 +4,9 @@
 #include "../net/net.h"
 #include <stdint.h>
 
+typedef size_t proto_id;
+typedef size_t proto_time;
+
 #define LIST_FOREACH(list, var) for ( \
 	typeof(list) var = list; var != NULL; var = var->next)
 
@@ -19,8 +22,8 @@
 		(list)->end->next = val; \
 		(list)->end = val; } }
 
-#define LIST1_DELETE(list, id_) { \
-	size_t idx = 0; \
+#define LIST1_DELETE(list, id_, idx) { \
+	idx = 0; \
 	typeof((list)->vals) prev = NULL; \
 	LIST_FOREACH((list)->vals, obj) { \
 		if (obj->id > id_) break; \
@@ -31,21 +34,42 @@
 				(list)->end = prev; \
 			if (prev != NULL) prev->next = obj->next; \
 			free(obj); } \
-		else prev = obj; idx++; } \
-	idx; }
+		else prev = obj; idx++; } }
 
-typedef size_t proto_id;
-typedef size_t proto_time;
+typedef struct proto_ent_t {
+	struct proto_ent_t* next;
+	char* name; proto_id id;
+} proto_ent_t;
 
-// req.c
+typedef struct {
+	proto_ent_t* vals;
+	proto_ent_t* end;
+} proto_ent1_t;
+
+proto_ent_t* proto_ent_new(char* name, proto_id id);
+void proto_ent_free(proto_ent_t* ents);
+
+typedef struct proto_msg_t {
+	struct proto_msg_t* next;
+	char *msg, *uname; proto_time time;
+} proto_msg_t;
+
+typedef struct {
+	proto_msg_t* vals;
+	proto_msg_t* end;
+} proto_msg1_t;
+
+proto_msg_t* proto_msg_new
+(char* msg_, char* uname, proto_time time);
+void proto_msg_free(proto_msg_t* msgs);
 
 typedef struct proto_ids {
 	struct proto_ids* next; proto_id id;
 } proto_id_t;
 
-typedef struct {
-	proto_id_t *vals, *end; } proto_id1_t;
+typedef struct { proto_id_t *vals, *end; } proto_id1_t;
 
+proto_id_t* proto_id_new(proto_id id);
 void proto_id_free(proto_id_t* ids);
 
 json_t* proto_get_users();
@@ -67,49 +91,34 @@ json_t* proto_chat_send(const char* msg);
 
 json_t* proto_delete_account();
 
-// res.c
-
-typedef struct proto_ent_t {
-	struct proto_ent_t* next;
-	char* name; proto_id id;
-} proto_ent_t;
-
-typedef struct {
-	proto_ent_t* vals;
-	proto_ent_t* end;
-} proto_ent1_t;
-
-void proto_ent_free(proto_ent_t* ents);
-
-typedef struct proto_msg_t {
-	struct proto_msg_t* next;
-	char *msg, *uname; proto_time time;
-} proto_msg_t;
-
-typedef struct {
-	proto_msg_t* vals;
-	proto_msg_t* end;
-} proto_msg1_t;
-
-void proto_msg_free(proto_msg_t* msgs);
-
 typedef enum {
+	PROTO_RES_ID = 7,
+
 	PROTO_RES_USERS = 1,
-	PROTO_RES_NEW_USER = 0,
+	PROTO_RES_USER_NEW = 0,
+	PROTO_RES_USER_DELETE = 10,
 
 	PROTO_RES_CHATS = 2,
+	PROTO_RES_CHAT_NEW = 3,
+
 	PROTO_RES_CHAT_USERS = 6,
-	PROTO_RES_NEW_CHAT = 3,
+	PROTO_RES_CHAT_USER_JOIN = 8,
+	PROTO_RES_CHAT_USER_LEAVE = 9,
 
 	PROTO_RES_MSGS = 4,
-	PROTO_RES_NEW_MSG = 5,
+	PROTO_RES_MSG_NEW = 5,
 } proto_res_kind;
 
 typedef struct {
 	proto_res_kind kind;
 	union {
 		proto_ent_t* ent;
-		proto_msg_t* msg; } val;
+		proto_msg_t* msg;
+
+		struct {
+			proto_id_t* ids;
+			proto_id tgt; } ids;
+	} val;
 } proto_res_t;
 
 // this consumes the `json` arg

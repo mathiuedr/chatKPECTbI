@@ -5,12 +5,11 @@ bool gui_init() {
 	uiInitOptions opts = { 0 };
 	return uiInit(&opts) == NULL; }
 
-void gui_cleanup() { uiUninit(); }
-void gui_quit_cb(void* data) { uiQuit(); }
-
 void gui_run() { uiMain(); }
-void gui_free_str(char* str) { uiFreeText(str); }
-void gui_check_free(gui_check_t* chk) { LIST_FREE(chk, _) {} }
+void gui_cleanup() { uiUninit(); }
+
+void gui_str_free(char* str) { uiFreeText(str); }
+void gui_quit_cb(void* data) { uiQuit(); }
 
 int gui_window_on_close(gui_window* _, void* data) {
 	gui_window_t* wnd = data;
@@ -41,6 +40,12 @@ void gui_window_init
 void gui_window_close(gui_window_t* wnd) {
 	wnd->exit.fn = NULL;
 	uiControlDestroy(uiControl(wnd->wnd)); }
+
+gui_check_t* gui_check_new(uiCheckbox* chk, proto_id id) {
+	gui_check_t* chk1 = calloc(1, sizeof(gui_check_t));
+	chk1->chk = chk; chk1->id = id; return chk1; }
+
+void gui_check_free(gui_check_t* chk) { LIST_FREE(chk, _) {} }
 
 void gui_msg_box(
 	gui_window* wnd, const char* title,

@@ -9,10 +9,8 @@ net_sesn_t* net_connect0(char* url) {
 	CURLcode err = curl_easy_perform(sesn);
 	return err == 0 ? sesn : NULL; }
 
-net_sesn_t* net_init0_login(
-	const char* url0, const char* uname,
-	const char* passwd)
-{
+net_sesn_t* net_init0_login
+(const char* url0, const char* uname, const char* passwd) {
 	char* url = calloc(
 		1, 20 + strlen(url0) +
 		strlen(uname) + strlen(passwd));
@@ -28,8 +26,8 @@ char* net_init0_reg(
 	const char* passwd, const char* name)
 {
 	char* url = calloc(
-		1, 30 + strlen(url0) +
-		strlen(uname) + strlen(passwd));
+		1, 30 + strlen(url0) + strlen(uname) +
+		strlen(passwd) + strlen(name));
 
 	sprintf(
 		url, "%s/?login_reg=%s&password=%s&name=%s",
@@ -41,9 +39,9 @@ net_sesn_t* net_connect(
 	const char* url0, const char* uname,
 	const char* passwd, const char* name)
 {
-	char* url1 = name == NULL
+	char* url = name == NULL
 		? net_init0_login(url0, uname, passwd)
 		: net_init0_reg(url0, uname, passwd, name);
 
-	net_sesn_t* sesn = net_connect0(url1);
-	free(url1); return sesn; }
+	net_sesn_t* sesn = net_connect0(url);
+	free(url); return sesn; }

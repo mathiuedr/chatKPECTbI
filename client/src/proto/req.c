@@ -1,12 +1,10 @@
 #include "proto.h"
 
-void proto_id_free(proto_id_t* ids) { LIST_FREE(ids, _) {} }
-
-json_t* proto_id_json(proto_id_t* ids) {
+json_t* proto_id_dump(proto_id_t* ids) {
 	json_t* ids1 = cJSON_CreateArray();
 	LIST_FOREACH(ids, id) {
 		json_t* id1 = cJSON_CreateNumber((double)id->id);
-		cJSON_AddItemToArray(ids1, ids1); }
+		cJSON_AddItemToArray(ids1, id1); }
 
 	proto_id_free(ids); return ids1; }
 
@@ -47,13 +45,13 @@ json_t* proto_chat_disconnect() { return proto_req_new(PROTO_CHAT_DISCONNECT); }
 json_t* proto_chat_new(const char* name, proto_id_t* users) {
 	json_t* req = proto_req_new(PROTO_CHAT_SEND);
 	cJSON_AddStringToObject(req, "chatName", name);
-	cJSON_AddItemToObject(req, "Invited", proto_id_json(users));
+	cJSON_AddItemToObject(req, "Invited", proto_id_dump(users));
 	return req; }
 
 // this consumes the `users` arg
 json_t* proto_chat_invite(proto_id chat, proto_id_t* users) {
 	json_t* req = proto_req_new(PROTO_CHAT_SEND);
-	cJSON_AddItemToObject(req, "Invited", proto_id_json(users));
+	cJSON_AddItemToObject(req, "Invited", proto_id_dump(users));
 	return req; }
 
 json_t* proto_chat_leave(proto_id chat) {
